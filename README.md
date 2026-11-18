@@ -279,8 +279,9 @@ https://pageshot.site/docs (share dungeon run png. We give it a snapshot of the 
 **Documentation**: https://goqr.me/api/doc/create-qr-code/
 **How it is used in the program**:
 After completing a run, the player can generate a QR code to share their results. The program sends a short text summary containing the player’s username, final score, and number of waves survived to the API. The API returns a QR code image, which the game displays and allows the player to save to clipboard. Other people can scan the code to read the run statistics.
+
 **API Name:** PageShot API
-**Documentation**: PageShot API documentation
+**Documentation**: [PageShot API documentation](https://pageshot.site/docs)
 **How it is used in the program**:
 The player can generate a shareable PNG image summarizing their dungeon run. The program captures a snapshot of the dungeon and builds an HTML/CSS template containing the snapshot, a colour gradient overlay, and text showing the player’s username, score, and waves survived. It sends this template to PageShot’s /v1/html endpoint, which renders the layout into a single PNG image. The game then displays the image and allows the player to save it for sharing.
 
