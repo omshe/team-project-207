@@ -13,7 +13,7 @@ your team will find it easier to prepare for the final presentation
 at the end of the term.
 
 # Project Name
-- SpellBook
+SpellBook
 
 ## Team Information
 
@@ -40,6 +40,7 @@ Game, RPG, Single Player, Offline, RogueLike
 
 ### User Story 1
 As a player, I want to be able have a character that can move, interact and get stronger so that I’m able to fight enemies
+
 ### User Story 2
 As a player, I want to be able to fight mobs (monsters) as well as traverse and explore the world so that they can progress in our game
 
@@ -176,8 +177,39 @@ Preconditions: The player has finished a dungeon run. The game has captured the 
 
 Trigger: The player clicks on “Save Run Card”
 
-Main Success Scenario:
-The game opens a file save dialogue, suggests ‘dungeon-run.png’
+Success Outcome: A PNG run card containing the dungeon background and final run statistics is saved to the player’s chosen location.
+
+Main Success Scenario: 
+1. The game opens a file save dialogue and suggests `dungeon-run.png`.
+2. The player chooses a destination and confirms the save.
+3. The game shows that the card is being generated and requests a finished image from PageShot. The card includes the dungeon background, a gradient overlay, the player’s display name/username, score, enemies defeated, time survived, and waves survived.
+4. The game receives the finished PNG and saves it to the chosen destination.
+5. The game displays a preview and confirms where the card was saved.
+
+Extensions:
+
+2a — The player cancels the save dialogue.
+
+1. The player returns to the results screen.
+2. The game makes no request to PageShot and creates no file.
+3. The player can select “Save Run Card” again.
+
+2b — A file already exists at the chosen destination.
+
+1. The game asks whether the player wants to replace it.
+2. If the player declines, they can choose another destination or cancel.
+
+3a — PageShot fails to return a usable image.
+
+1. The game reports that the card could not be generated.
+2. The game retains the same background and final statistics so the player can retry.
+3. No file is saved.
+
+4a — The game cannot save the PNG.
+
+1. The game reports that the card could not be saved.
+2. The player can choose another destination using the image already generated.
+
 
 ---
 
@@ -187,17 +219,17 @@ The game opens a file save dialogue, suggests ‘dungeon-run.png’
 
 |-------------|--------------|
 
-| Jordan Lin | Generate the World |
+| Jordan Lin | Move the Player |
 
-| Seran Naventhan | Move the Player |
+| Seran Naventhan | Generate the World |
 
-| Seran Naventhan | Cast a Spell |
+| Seran Naventhan | Save Run Card |
 
 | Aayaan Singal  | Generate Mob Waves |
 
-| Omer Sheaffer | Prepare a Spell |
+| Omer Sheaffer | Cast a Spell |
 
-| Omer Sheaffer | Save Run Card |
+| Omer Sheaffer | Prepare a Spell |
 
 ---
 
@@ -275,15 +307,21 @@ https://wiki.openstreetmap.org/wiki/Overpass_API? (gen new random world each gam
 https://pageshot.site/docs (share dungeon run png. We give it a snapshot of the dungeon + the run stats as text + a color gradient to overlay above the snapshot and below the text. It formats it as a single png image and returns it)
 
 ## API Usage
-**API Name**: goQR.me QR Code API
-**Documentation**: https://goqr.me/api/doc/create-qr-code/
-**How it is used in the program**:
-After completing a run, the player can generate a QR code to share their results. The program sends a short text summary containing the player’s username, final score, and number of waves survived to the API. The API returns a QR code image, which the game displays and allows the player to save to clipboard. Other people can scan the code to read the run statistics.
 
 **API Name:** PageShot API
+
 **Documentation**: [PageShot API documentation](https://pageshot.site/docs)
+
 **How it is used in the program**:
 The player can generate a shareable PNG image summarizing their dungeon run. The program captures a snapshot of the dungeon and builds an HTML/CSS template containing the snapshot, a colour gradient overlay, and text showing the player’s username, score, and waves survived. It sends this template to PageShot’s /v1/html endpoint, which renders the layout into a single PNG image. The game then displays the image and allows the player to save it for sharing.
+
+
+**API Name**: goQR.me QR Code API
+
+**Documentation**: https://goqr.me/api/doc/create-qr-code/
+
+**How it is used in the program**:
+After completing a run, the player can generate a QR code to share their results. The program sends a short text summary containing the player’s username, final score, and number of waves survived to the API. The API returns a QR code image, which the game displays and allows the player to save to clipboard. Other people can scan the code to read the run statistics.
 
 ---
 
