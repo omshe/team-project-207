@@ -39,6 +39,30 @@ Key presses and mouse strokes are only recorded by the `view` layer. `GameLoop` 
 
 ## Aayaan: first enemy
 
+> **Update (2026-11-20, Aayaan): scope changed from one enemy to mob waves.** The course
+> needs each member to own a use case, so this became its own **Generate Mob Waves** use case
+> (`use_case/generate_mob_waves`, README Use Case 2) instead of extra steps inside
+> `UpdateGameInteractor`. What changed from the proposal below:
+>
+> - **Waves, not one enemy.** A wave of 3 slimes appears on the player's *first movement*
+>   (not at startup), near the left, right and top edges. Only one wave is active at a time;
+>   the next wave starts once every enemy in the current one has been removed.
+> - **Removal seam for combat:** `EnemyWave.removeEnemy(enemy)`. Nothing calls it yet, so in
+>   normal play wave 1 stays on screen. Touching the player does not kill an enemy.
+> - **Tick order:** `GameLoop` calls the player's controller, then `EnemyWaveController`, then
+>   repaints. A spell step can slot in between without touching either use case.
+> - **Shared pieces delivered:** `entity/Hitbox` (axis-aligned boxes; edges and corners count
+>   as touching) and `view/SpriteSheet` (loads a classpath PNG strip and cuts frames).
+> - **Enemy display data** lives in its own `EnemyWaveViewModel`, not in `GameState`, so the
+>   player and mob presenters never overwrite each other.
+> - **Sprite:** the Tiny RPG pack's slime (`src/main/resources/sprites/enemy/slime/`), 6-frame
+>   idle and walk strips of 100 x 100 frames; drawn at exactly 2x, so the hitbox is 56 x 34.
+> - **Open questions answered:** no blocking terrain yet, so a straight-line chase is enough
+>   (revisit if water blocks movement); art comes from the asset pack; speed is 2 px per tick
+>   and enemies stop exactly at touching.
+>
+> The original proposal is kept below for history.
+
 One enemy appears, walks toward the player using an animated sprite, and stops when it reaches them. It has no HP, does no damage and cannot die yet.
 
 **Behaviour (proposed)**

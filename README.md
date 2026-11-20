@@ -91,24 +91,42 @@ Name: Generate Mob Waves
 Primary Actor: Player
 
 Preconditions:
-The user is in the game loop
-The user has made some initial action or movement
-There is not already a pre-existing mob wave active
+- The player is in an active game.
+- No wave of mobs is currently active.
 
-Trigger: The player has started moving or interacting with the world
+Trigger: The player makes their first movement in the game. (Every later wave is triggered by the previous wave being defeated.)
 
-Success outcome: The player has defeated the mob wave
+Success outcome: A wave of mobs appears inside the world, away from the player, and chases the player wherever they go, stopping when it reaches them. Once that wave is defeated, the next wave appears.
 
 Main Success Scenario:
-The user starts moving or interacting with the world
-A wave of mobs spawn around the player
-The player fights and defeats the mobs
-A new wave of mobs spawns in
+1. The player presses a movement key for the first time.
+2. The game places a wave of mobs inside the world, near its edges, without any mob overlapping the player or another mob.
+3. The game shows the current wave number.
+4. Every update, each mob moves toward the player's current position, no faster diagonally than straight.
+5. A mob that reaches the player stops right beside them, without overlapping them.
+6. When the player moves away, the mob starts chasing again.
+7. When every mob in the wave has been defeated, the game places the next wave and the wave number goes up by one.
 
-Extensions: 
-2a: The player is defeated by the mobs
-The player is shown the death screen
-The player has the option to return to restart the game
+Extensions:
+- 1a. The player presses no movement keys, or only opposite keys that cancel out (left and right together).
+  1. Nothing appears and the game keeps waiting for a real movement.
+- 2a. There is not enough free space in the world to place the whole wave.
+  1. No mobs appear (the game never places part of a wave).
+  2. The game tells the player the wave could not start.
+  3. The game tries again on the next update, and the player can keep moving meanwhile.
+- 5a. The player walks into a mob that is already beside them.
+  1. The mob stays where it is; it does not push the player or move through them.
+- 7a. At least one mob in the wave is still alive.
+  1. No new wave appears.
+
+MVP scope (November 2026): mobs cannot be defeated yet, because combat (Use Case 4) is not built.
+Touching the player does not hurt the player or defeat the mob. The first wave therefore stays
+on screen; step 7 is ready for combat to plug into and is covered by automated tests.
+
+Planned (after the MVP, once health and combat exist):
+- Mobs damage the player on contact.
+- Later waves get bigger or harder, and new kinds of mob appear.
+- 4a. The player is defeated by the mobs: the player is shown the death screen and can restart the game.
 
 ### Use Case 3
 
@@ -263,6 +281,11 @@ Relevant methods:
 ### Entity 3: Enemy
 Represents an enemy spawned during a wave.
 
+*Implemented for the MVP:* `entity/Enemy` (position, hitbox size, speed in pixels per tick,
+straight-line chase that stops at first contact), `entity/EnemyWave` (wave number and active
+enemies) and `entity/Hitbox` (pure rectangle geometry with the contact rule). Health, attack
+damage, attack range, enemy types and `takeDamage`/`isAlive` below are still **planned**.
+
 Instance variables:
 - String enemyId — unique identifier for the enemy.
 - String enemyType — enemy category, such as basic, fast, or boss.
@@ -329,7 +352,12 @@ After completing a run, the player can generate a QR code to share their results
 
 ### UML Class Diagram
 
+- Generate Mob Waves: [`docs/diagrams/generate-mob-waves.puml`](docs/diagrams/generate-mob-waves.puml)
+  (first diagram; arrows are source-code dependencies and all point inward).
+
 ### Sequence Diagrams
+
+- Generate Mob Waves, one tick: same file, second diagram (arrows are runtime calls).
 
 ---
 
@@ -340,7 +368,17 @@ Requires JDK 11+ (17 recommended).
 - IntelliJ: open the project and run `app.Main`.
 - Maven: `mvn compile exec:java -Dexec.mainClass=app.Main`, or `mvn compile` then `java -cp target/classes app.Main`.
 
-Move the white box with WASD or the arrow keys.
+Move the white box with WASD or the arrow keys. Your first move starts wave 1: three slimes
+appear near the edges and chase you, stopping when they reach you.
+
+### Tests, coverage and style
+
+- `mvn test` runs the JUnit 5 tests in `src/test/java` and writes a JaCoCo line-coverage report
+  to `target/site/jacoco/index.html`.
+- `mvn checkstyle:check` checks style against the course's shared Google rules
+  (`checkstyle/google_checks.xml`). It reports without failing the build; see
+  `checkstyle/checkstyle-suppressions.xml` for the two rules that clash with AGENTS.md
+  (underscore package names and 4-space indentation).
 
 ### Architecture (core loop)
 
@@ -348,7 +386,28 @@ Move the white box with WASD or the arrow keys.
 - `use_case/update_game`: one tick of game rules (`UpdateGameInteractor`) with input/output boundaries.
 - `interface_adapter/game`: `GameController` (key state -> request), `GamePresenter` + `GameViewModel` (result -> what to draw).
 - `view`: `GameWindow` (JFrame), `GamePanel` (draws), `KeyboardInput` (records held keys).
-- `app`: `GameLoop` (60 ticks/s thread: input -> update -> repaint) and `Main` (builds and wires everything).
+- `app`: `GameLoop` (60 ticks/s thread: input -> player update -> mob-wave update -> repaint) and `Main` (builds and wires everything).
+
+### Architecture (Generate Mob Waves, Aayaan)
+
+Runs every tick right after the player moves, as its own use case.
+
+- `entity`: `Enemy` (chases a target, stops at first contact), `EnemyWave` (wave number,
+  active enemies, `removeEnemy` seam for future combat), `Hitbox` (rectangle geometry and the
+  touching rule).
+- `use_case/generate_mob_waves`: `GenerateMobWavesInteractor` (when a wave starts, placing a
+  whole wave or none, chasing) with its input/output boundaries and data, the
+  `GenerateMobWavesDataAccessInterface` (player and wave), `MobWaveSettings` (count, size,
+  speed) and the `SpawnPositionStrategy` interface with `EdgeSpawnPositionStrategy`.
+- `data_access`: `InMemoryEnemyWaveDataAccessObject` holds the shared player and the wave.
+- `interface_adapter/enemy_wave`: `EnemyWaveController` (keys -> direction),
+  `EnemyWavePresenter` (result -> rounded, immutable `EnemyWaveState`), `EnemyWaveViewModel`.
+- `view`: `EnemyWaveLayer` (draws mobs and the wave heading inside `GamePanel`), `SlimeSprite`
+  (chooses idle/walk frames, fits the art to the hitbox, mirrors it), `SpriteSheet` (loads a
+  classpath PNG strip). Art: `src/main/resources/sprites/` (see `CREDITS.md` there).
+
+Tunable defaults (in `Main`): 3 slimes per wave, 56 x 34 px hitbox (the slime art at exactly 2x),
+2 px per tick (half the player's speed), spawned 16 px inside the edges.
 
 ---
 
