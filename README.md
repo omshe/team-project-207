@@ -134,22 +134,21 @@ Name: Prepare a Spell
 
 Primary actor: Player
 
-Preconditions: The player is in an active game
+Preconditions: The player is in an active game and has drawn one or more strokes while holding the drawing key.
 
-Trigger: The player begins drawing one of the spell symbols anywhere on the map
+Trigger: The player releases the drawing key to submit the gesture.
 
-Success outcome: The game shows that that specific spell is ready to cast.
+Success outcome: The game recognizes the gesture and automatically starts casting the identified spell toward the captured drawing location.
 
 Main success scenario:
-1. The player draws and submits a specific spell symbol.
-2. The game recognizes the drawing as a specific spell.
-3. The game makes that spell available to cast for Use Case 3
+1. The player releases the drawing key.
+2. The game captures the completed gesture and its fixed aim point in the world.
+3. The game recognizes a supported spell while the interface remains responsive.
+4. The game automatically continues to Cast a Spell with that spell and aim point.
 
 Extensions:
- 2a - The drawing is not recognized
- 
-  1. The game tells the player it did not recognize the drawing.
-  2. The failed attempt adds no fireball casts. The player can try again from step 1.
+- 2a. The submitted gesture is empty. The game shows feedback and launches nothing.
+- 3a. Recognition fails or identifies an unavailable spell. The game shows feedback and launches nothing. The player can draw again.
 
 ### Use Case 4
 
@@ -157,16 +156,25 @@ Name: Cast a spell
 
 Primary Actor: Player
 
-Preconditions: The player has prepared a spell (Use Case 3)
+Preconditions: The player is in an active game, and a supported spell and fixed world aim point have been supplied.
 
-Trigger: The player has stopped drawing, and releases the spell
+Trigger: A successful spell recognition result arrives. During development of the recognition system, a left click supplies the equivalent fireball request.
 
-Success Outcome: The specific spell that the player has drawn is released from the player, in the direction of where they drew.
+Success Outcome: One animated projectile launches from the player's current centre and travels in a fixed direction toward the supplied aim point.
 
 Main Success Scenario:
-The program checks which spell to output given Use Case 2
-The program determines the path for which to launch the spell (towards the cursor)
-That specific spell is launched from the player towards the cursor
+1. The game receives a spell and fixed world aim point.
+2. The game checks that the spell and aim point are valid.
+3. The game launches one projectile from the player's current centre.
+4. The projectile travels in its initial direction while its animation faces that direction.
+5. The projectile disappears on enemy contact or world exit.
+
+Extensions:
+- 2a. The spell is unavailable or the aim point is invalid. The game shows feedback and launches nothing.
+- 2b. The aim point coincides with the launch centre. The game shows feedback and launches nothing.
+- 4a. An enemy or the cursor moves. The projectile continues in its original direction.
+
+**MVP scope** The aim point determines the initial direction. Enemy contact removes the projectile. Health, damage, and enemy defeat are planned for later combat work.
 
 ### Use Case 5
 Name: Generate the world
@@ -186,7 +194,7 @@ Any entities that should be drawn are drawn
 The player enters the game loop, and can start to control the player
 
 
-### User Story 6
+### Use Case 6
 Name: Save Run Card
 
 Primary Actor: Player
