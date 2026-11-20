@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-All project rules live in AGENTS.md so Claude Code and Codex follow the same ones.
+All project rules live in AGENTS.md and apply to every agent and teammate working in this
+repository (Claude Code and Codex included).
 Read and follow it in full:
 
 @AGENTS.md

@@ -176,7 +176,7 @@ For a new feature:
    Whenever a step has no responsible class, or a class needs data it can't get, fix the design
    and start over. Stop when a full pass needs no changes.
 5. Then build the CA engine for that one use case (section 2), wire it in `app`, and update
-   the README "Architecture" section.
+   the README "Architecture" section. Larger features can get a spec in `docs/specs/`.
 6. Every extension (failure path) becomes a presenter fail view or a distinct output, never an
    exception that escapes to the view.
 
@@ -218,4 +218,16 @@ For a new feature:
 2. Go through §4 (SOLID) and §7 (red flags) for each class you touched.
 3. `mvn -q test` passes, with tests for the success path and each extension.
 4. README use case and "Architecture" section match the code.
-5. In your reply, name any rule you bent and why. Silence means none were bent.
+5. Commit messages follow §10.
+6. In your reply, name any rule you bent and why. Silence means none were bent.
+
+## 10. Commits
+
+- Format: `type(scope): subject`. Scope is optional.
+- Types: `feat`, `fix`, `refactor`, `tune` (balance/number tweaks), `test`, `docs`, `chore`, `revert`.
+- Subject: lowercase, imperative ("add", not "added"), no trailing period.
+- Body only when needed: what changed and why.
+- No AI co-authors or AI attribution lines in commits or PRs.
+- Branches: `feat/...`, `fix/...`, etc. Example: `feat/enemy-spawning`.
+
+Example: `feat(player): add WASD and arrow key movement`
