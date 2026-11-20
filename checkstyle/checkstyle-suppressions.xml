@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.0//EN"
+    "https://checkstyle.org/dtds/suppressions_1_0.dtd">
+<!--
+    google_checks.xml is copied unchanged from the CSC207 course notes (checkstyle 10.26.1).
+    Two of its rules conflict with conventions this repository already requires, so they are
+    suppressed here instead of reformatting everyone's code:
+
+    - PackageName: AGENTS.md requires the Clean Architecture package names use_case,
+      interface_adapter and data_access, which contain underscores.
+    - Indentation: the repository uses 4-space indentation; Google style uses 2.
+
+    Every other rule still reports.
+-->
+<suppressions>
+    <suppress checks="PackageName" files=".*"/>
+    <suppress checks="Indentation" files=".*"/>
+</suppressions>
