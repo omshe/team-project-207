@@ -1,0 +1,101 @@
+package entity;
+
+import java.util.Objects;
+
+/**
+ * A moving spell projectile with a position, fixed velocity, and rectangular hitbox.
+ */
+public final class Projectile {
+
+    private final Spell spell;
+    private final double velocityX;
+    private final double velocityY;
+    private final double width;
+    private final double height;
+
+    private double x;
+    private double y;
+
+    /**
+     * Creates a projectile at the given top-left position.
+     *
+     * @param spell the spell represented by this projectile
+     * @param x the initial left edge in world pixels
+     * @param y the initial top edge in world pixels
+     * @param velocityX horizontal movement in pixels per tick
+     * @param velocityY vertical movement in pixels per tick
+     * @param width the positive, finite hitbox width in pixels
+     * @param height the positive, finite hitbox height in pixels
+     * @throws NullPointerException if spell is null
+     * @throws IllegalArgumentException if position or velocity is not finite,
+     *                                  or either dimension is not positive and finite
+     */
+    public Projectile(Spell spell, double x, double y,
+                      double velocityX, double velocityY,
+                      double width, double height) {
+        this.spell = Objects.requireNonNull(spell, "Spell must not be null");
+
+        if (!Double.isFinite(x) || !Double.isFinite(y)) {
+            throw new IllegalArgumentException("Position must be finite");
+        }
+        if (!Double.isFinite(velocityX) || !Double.isFinite(velocityY)) {
+            throw new IllegalArgumentException("Velocity must be finite");
+        }
+        if (!Double.isFinite(width) || !Double.isFinite(height)
+                || width <= 0 || height <= 0) {
+            throw new IllegalArgumentException(
+                    "Projectile dimensions must be positive and finite");
+        }
+
+        this.x = x;
+        this.y = y;
+        this.velocityX = velocityX;
+        this.velocityY = velocityY;
+        this.width = width;
+        this.height = height;
+    }
+
+    /**
+     * Advances the projectile by its fixed velocity for one game tick.
+     */
+    public void move() {
+        x += velocityX;
+        y += velocityY;
+    }
+
+    /**
+     * Returns the spell represented by this projectile.
+     *
+     * @return the associated spell
+     */
+    public Spell getSpell() {
+        return spell;
+    }
+
+    /**
+     * Returns the projectile's left edge.
+     *
+     * @return the horizontal position in world pixels
+     */
+    public double getX() {
+        return x;
+    }
+
+    /**
+     * Returns the projectile's top edge.
+     *
+     * @return the vertical position in world pixels
+     */
+    public double getY() {
+        return y;
+    }
+
+    /**
+     * Returns a hitbox at the projectile's current position.
+     *
+     * @return a new immutable hitbox with this projectile's position and dimensions
+     */
+    public Hitbox getHitbox() {
+        return new Hitbox(x, y, width, height);
+    }
+}

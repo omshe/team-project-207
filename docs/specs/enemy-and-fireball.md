@@ -110,6 +110,22 @@ The player draws a circle with the mouse to ready a fireball, then clicks to lau
 3. While a fireball is ready, the player clicks anywhere. A fireball spawns at the player's centre and flies in a straight line toward the click point.
 4. The fireball disappears when it hits the enemy or leaves the screen. It deals no damage yet.
 
+Cast a Spell is implemented first. A temporary left-click adapter supplies a
+known fireball ID and clicked world aim point through the casting boundary.
+The game launches one animated projectile from the player's current centre,
+keeps its initial direction, and expires it on enemy contact or world exit.
+
+Prepare a Spell will be implemented separately. Holding a drawing key groups
+mouse strokes. Releasing that key submits the gesture and captures its aim point.
+A CNN or $P recognizer identifies the spell asynchronously. Successful recognition
+automatically supplies one cast request through the same boundary, and rejected
+gestures produce feedback and zero cast requests. The proposed aim point is the
+drawing's bounding-box centre. The drawing key, supported glyphs, label mapping,
+and final classifier are agreed during preparation work.
+
+Health, damage, and enemy defeat remain deferred.
+
+
 **Recognising a circle**
 
 There are two options to choose between:
