@@ -1,0 +1,133 @@
+' Generate Mob Waves (Aayaan) - editable PlantUML.
+' Diagram 1 shows SOURCE-CODE DEPENDENCIES (who imports whom); every arrow points inward.
+' Diagram 2 shows RUNTIME FLOW for one tick, which goes outward through interfaces.
+
+@startuml generate-mob-waves-classes
+title Generate Mob Waves - class diagram (arrows = source-code dependencies)
+skinparam packageStyle rectangle
+hide empty members
+
+package app {
+  class Main
+  class GameLoop
+}
+
+package view {
+  class GamePanel
+  class EnemyWaveLayer
+  class SlimeSprite
+  class SpriteSheet
+}
+
+package data_access {
+  class InMemoryEnemyWaveDataAccessObject
+}
+
+package interface_adapter.enemy_wave {
+  class EnemyWaveController
+  class EnemyWavePresenter
+  class EnemyWaveViewModel
+  class EnemyWaveState
+  class EnemyDisplayData
+}
+
+package use_case.generate_mob_waves {
+  interface GenerateMobWavesInputBoundary
+  interface GenerateMobWavesOutputBoundary
+  interface GenerateMobWavesDataAccessInterface
+  interface SpawnPositionStrategy
+  class GenerateMobWavesInteractor
+  class EdgeSpawnPositionStrategy
+  class MobWaveSettings
+  class GenerateMobWavesInputData
+  class GenerateMobWavesOutputData
+  class EnemyOutputData
+}
+
+package entity {
+  class Enemy
+  class EnemyWave
+  class Hitbox
+  class Player
+}
+
+' --- app wires everything ---
+Main ..> GameLoop
+Main ..> InMemoryEnemyWaveDataAccessObject
+Main ..> GenerateMobWavesInteractor
+Main ..> EnemyWavePresenter
+Main ..> EdgeSpawnPositionStrategy
+GameLoop --> EnemyWaveController
+
+' --- view reads only the adapter layer ---
+GamePanel --> EnemyWaveLayer
+EnemyWaveLayer --> EnemyWaveViewModel
+EnemyWaveLayer --> SlimeSprite
+SlimeSprite --> SpriteSheet
+SlimeSprite ..> EnemyDisplayData
+
+' --- data access implements the use case's interface ---
+InMemoryEnemyWaveDataAccessObject ..|> GenerateMobWavesDataAccessInterface
+InMemoryEnemyWaveDataAccessObject --> EnemyWave
+InMemoryEnemyWaveDataAccessObject --> Player
+
+' --- adapters depend on use-case abstractions only ---
+EnemyWaveController --> GenerateMobWavesInputBoundary
+EnemyWavePresenter ..|> GenerateMobWavesOutputBoundary
+EnemyWavePresenter --> EnemyWaveViewModel
+EnemyWaveViewModel --> EnemyWaveState
+EnemyWaveState --> EnemyDisplayData
+
+' --- the interactor knows interfaces and entities, never adapters ---
+GenerateMobWavesInteractor ..|> GenerateMobWavesInputBoundary
+GenerateMobWavesInteractor --> GenerateMobWavesOutputBoundary
+GenerateMobWavesInteractor --> GenerateMobWavesDataAccessInterface
+GenerateMobWavesInteractor --> SpawnPositionStrategy
+GenerateMobWavesInteractor --> MobWaveSettings
+EdgeSpawnPositionStrategy ..|> SpawnPositionStrategy
+GenerateMobWavesOutputData --> EnemyOutputData
+GenerateMobWavesInteractor ..> Enemy
+GenerateMobWavesInteractor ..> EnemyWave
+GenerateMobWavesInteractor ..> Hitbox
+GenerateMobWavesInteractor ..> Player
+
+' --- entities depend only on each other ---
+EnemyWave o-- "0..*" Enemy
+Enemy ..> Hitbox
+@enduml
+
+@startuml generate-mob-waves-tick
+title Generate Mob Waves - one simulation tick (arrows = runtime calls)
+participant GameLoop
+participant GameController
+participant EnemyWaveController
+participant "GenerateMobWaves\nInteractor" as Interactor
+participant "DataAccess\n(interface)" as DAO
+participant "SpawnPosition\nStrategy" as Strategy
+participant "Enemy /\nEnemyWave" as Entities
+participant "OutputBoundary\n(EnemyWavePresenter)" as Presenter
+participant EnemyWaveViewModel
+participant "GamePanel /\nEnemyWaveLayer" as View
+
+GameLoop -> GameController : tick(keys)
+note right of GameController : player moves and is clamped first
+GameLoop -> EnemyWaveController : tick(same keys)
+EnemyWaveController -> Interactor : execute(InputData(moveX, moveY))
+Interactor -> DAO : getEnemyWave(), getPlayer()
+alt wave due (first move request, or current wave cleared)
+  Interactor -> Strategy : proposeCandidates(...)
+  Interactor -> Interactor : keep valid, non-touching spots
+  alt enough spots for the whole wave
+    Interactor -> Entities : startNextWave(new enemies)
+  else not enough room (extension 2a)
+    Interactor -> Presenter : prepareFailView(state, message)
+    Presenter -> EnemyWaveViewModel : setState(new snapshot)
+    note over Interactor : retried next tick
+  end
+end
+Interactor -> Entities : each enemy.pursue(player hitbox)
+Interactor -> Presenter : prepareSuccessView(OutputData copy)
+Presenter -> EnemyWaveViewModel : setState(new immutable snapshot)
+GameLoop -> View : repaint() (request only)
+View -> EnemyWaveViewModel : getState() on the Swing thread
+@enduml
