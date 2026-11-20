@@ -270,6 +270,8 @@ Relevant methods:
 ### Entity 2: Spell
 Represents a spell and the drawing pattern used to activate it.
 
+*Implemented for the MVP:* Spell defines getId() and getName(), and FireballSpell provides the fireball identifier and display name. Damage and applyEffect(Enemy) remain **planned** for a later combat feature.
+
 Instance variables:
 - String name — spell’s name.
 - int damage — damage dealt to affected enemies.
