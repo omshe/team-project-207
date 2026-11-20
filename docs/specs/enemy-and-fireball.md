@@ -101,61 +101,91 @@ The world is currently an empty 960 × 640 px box with no walls. With nothing in
 
 ## Omer: first spell (fireball)
 
-The player draws a circle with the mouse to ready a fireball, then clicks to launch an animated fire sprite toward the cursor. This is the game's core mechanic, so the stroke-recognition design should leave room for more spells later.
+Cast a Spell is implemented independently of Prepare a Spell.
 
-**Player flow (proposed)**
+The projectile entity, launch use case, and shared in-memory storage are
+implemented and unit tested. Simulation, input integration, and rendering
+are the next implementation steps.
 
-1. The player holds the left mouse button and draws. A faint trail shows the stroke as they draw.
-2. When they release the button, the stroke is checked. If it is a circle, the fireball becomes *ready* (shown with a small icon or glow on the player). If not, nothing happens and the trail fades.
-3. While a fireball is ready, the player clicks anywhere. A fireball spawns at the player's centre and flies in a straight line toward the click point.
-4. The fireball disappears when it hits the enemy or leaves the screen. It deals no damage yet.
+### Development input
 
-Cast a Spell is implemented first. A temporary left-click adapter supplies a
-known fireball ID and clicked world aim point through the casting boundary.
-The game launches one animated projectile from the player's current centre,
-keeps its initial direction, and expires it on enemy contact or world exit.
+A temporary left click supplies the fireball spell ID and a fixed world
+reference point through the casting boundary. Each click requests one projectile.
 
-Prepare a Spell will be implemented separately. Holding a drawing key groups
-mouse strokes. Releasing that key submits the gesture and captures its aim point.
-A CNN or $P recognizer identifies the spell asynchronously. Successful recognition
-automatically supplies one cast request through the same boundary, and rejected
-gestures produce feedback and zero cast requests. The proposed aim point is the
-drawing's bounding-box centre. The drawing key, supported glyphs, label mapping,
-and final classifier are agreed during preparation work.
+### Future preparation integration
 
+Prepare a Spell owns drawing capture and recognition. The player holds a
+drawing key across mouse strokes and releases it to submit the gesture.
+Successful recognition automatically supplies one spell ID and the captured
+world reference point to Cast a Spell. Rejection produces feedback and
+zero cast requests.
+
+The proposed drawing reference point is its bounding-box centre.
+The drawing key and final CNN or $P recognizer remain to be chosen.
+
+### Projectile behavior
+
+1. Launch from the player's current centre.
+2. Calculate the initial direction using the supplied world reference point.
+3. Maintain constant velocity, including after passing through that point.
+4. On the first enemy contact, remove the projectile and emit one impact event
+   containing the spell identity and collision position.
+5. On world exit, remove the projectile without an impact event.
+
+Enemy movement leaves the projectile's velocity fixed.
 Health, damage, and enemy defeat remain deferred.
 
+### Animation
 
-**Recognising a circle**
+The view owns image loading, frame selection, rotation, and animation timing.
 
-There are two options to choose between:
+The supplied fireball sheet contains seven visible frames in a 700 × 100 image.
+Store the prepared resource under src/main/resources/sprites/spells/fireball/.
 
-- **Simple circle check.** Find the stroke's centre point, then measure each point's distance from it. Accept the stroke if those distances vary by less than about 25%, the end is close to the start, and the radius is at least 20 px. This is quick to write but only knows circles.
-- **$1 Unistroke Recognizer.** This is a well-known algorithm of about 200 lines that compares a stroke against saved templates. It takes longer to write, but each later spell (lightning zigzag, shield square) is just a new template.
+Proposed playback for visual verification:
+- Loop frames 1–4 throughout flight.
+- Play frames 5–7 once on enemy impact, ending with the circular frame.
+- Start with five game ticks per frame and adjust after viewing it in-game.
+- Remove the impact visual after its final frame has been displayed.
 
-The rule "a circle means fireball" is game logic, so the recogniser lives in `use_case` or `entity`, never in `view`.
+### Responsibilities
 
-**Where the code goes**
-
-| Layer | Change |
+| Layer | Responsibility |
 | --- | --- |
-| `view` | New `MouseInput` (like `KeyboardInput`) records the stroke points, the release and the click point. `GamePanel` draws the trail and the fire sprite |
-| `app` | `GameLoop` passes any finished stroke and click into the controller each tick |
-| `interface_adapter/game` | `GameController` adds the stroke and aim point to the input data. `GameState` gains the fireball list and a "spell ready" flag |
-| `use_case` | Proposed: a new `cast_spell` use case turns a stroke into a ready spell. `UpdateGameInteractor` spawns and moves fireballs |
-| `entity` | New `Fireball` with position, direction and speed (proposed 10 px per tick) |
+| entity | Projectile position, fixed velocity, and hitbox |
+| use_case/cast_spell | Launch validation, movement, collision, expiration, and impact output |
+| data_access | Shared player, enemy wave, and projectile storage |
+| interface_adapter/cast_spell | Controllers, presenters, and immutable display state |
+| view | Temporary input, flight animation, and impact playback |
+| app | Dependency wiring and controller scheduling |
 
-**Threading**
+### Threading
 
 Mouse events arrive on Swing's thread, but the game loop runs on its own thread. A finished stroke is a list of points, so it can't be shared through a `volatile` boolean the way WASD keys are. Hand it over through a thread-safe queue such as `ConcurrentLinkedQueue`, so a stroke is never read while it is still being built and never lost between ticks.
 
-**Done when**
+The completed-stroke handoff applies when Prepare a Spell is implemented.
 
-- [ ] Drawing a rough circle readies a fireball. A line or scribble does not
-- [ ] Clicking while ready launches a fireball toward the cursor, and readiness is used up
-- [ ] The fire sprite animates and points the way it travels
-- [ ] The fireball disappears on hitting the enemy or leaving the screen
-- [ ] Unit tests feed recorded strokes into the recogniser: several circles pass, and a line and a zigzag fail
+For Cast a Spell, mouse input queues an immutable request containing the
+spell ID and captured world aim point. The game loop processes each request
+once through the casting controller. Projectile creation, movement, collision
+checks, and removal happen on the game-loop thread. The view reads display
+snapshots and renders flight and impact animations.
+
+When Prepare a Spell is implemented, drawing recognition runs in a background worker. 
+Successful recognition supplies a casting request through the same queue.
+
+### Acceptance checklist
+
+- [ ] One valid request launches one projectile.
+- [ ] Movement speed is consistent in every direction.
+- [ ] Flight continues beyond the original aim point.
+- [ ] Collision detection catches enemies crossed between tick positions.
+- [ ] Enemy contact produces exactly one impact event and preserves the enemy.
+- [ ] World exit produces no impact event.
+- [ ] Flight animation loops and impact animation plays once.
+- [ ] Multiple projectiles and impact animations can coexist.
+- [ ] Player movement and enemy pursuit continue working.
+- [ ] Tests cover launch, simulation, expiration, and presentation.
 
 ## Seran: tile map
 
