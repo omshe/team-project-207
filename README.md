@@ -138,7 +138,7 @@ Preconditions: The player is in an active game and has drawn one or more strokes
 
 Trigger: The player releases the drawing key to submit the gesture.
 
-Success outcome: The game recognizes the gesture and automatically starts casting the identified spell toward the captured drawing location.
+Success outcome: The game recognizes the gesture and automatically starts casting the identified spell in the direction of the captured drawing location.
 
 Main success scenario:
 1. The player releases the drawing key.
@@ -166,15 +166,18 @@ Main Success Scenario:
 1. The game receives a spell and fixed world aim point.
 2. The game checks that the spell and aim point are valid.
 3. The game launches one projectile from the player's current centre.
-4. The projectile travels in its initial direction while its animation faces that direction.
-5. The projectile disappears on enemy contact or world exit.
+4. The projectile travels at a constant velocity in its initial direction.
+   Its flight animation repeats and faces the direction of travel.
+6. On enemy contact, flight ends and a circular impact animation plays once at the collision location. The enemy remains active.
+7. If the projectile leaves the world, it disappears without an impact animation.
 
 Extensions:
 - 2a. The spell is unavailable or the aim point is invalid. The game shows feedback and launches nothing.
 - 2b. The aim point coincides with the launch centre. The game shows feedback and launches nothing.
 - 4a. An enemy or the cursor moves. The projectile continues in its original direction.
+- 4b. The projectile passes through the original aim point. It continues travelling in its original direction.
 
-**MVP scope** The aim point determines the initial direction. Enemy contact removes the projectile. Health, damage, and enemy defeat are planned for later combat work.
+**MVP scope** The aim point determines the projectile's initial direction. The projectile continues until enemy contact or world exit. Enemy contact produces one visual impact, which disappears after its animation finishes. Health, damage, and enemy defeat are planned for later combat work.
 
 ### Use Case 5
 Name: Generate the world
