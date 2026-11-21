@@ -3,7 +3,12 @@ package app;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import data_access.InMemoryEnemyWaveDataAccessObject;
+import entity.EnemyWave;
 import entity.Player;
+import interface_adapter.enemy_wave.EnemyWaveController;
+import interface_adapter.enemy_wave.EnemyWavePresenter;
+import interface_adapter.enemy_wave.EnemyWaveViewModel;
 import interface_adapter.game.GameController;
 import interface_adapter.game.GamePresenter;
 import interface_adapter.game.GameState;
@@ -15,12 +20,17 @@ import java.awt.image.BufferedImage;
 import java.util.Map;
 import javax.swing.SwingUtilities;
 import org.junit.jupiter.api.Test;
+import use_case.generate_mob_waves.EdgeSpawnPositionStrategy;
+import use_case.generate_mob_waves.GenerateMobWavesInteractor;
+import use_case.generate_mob_waves.MobWaveSettings;
 import use_case.update_game.UpdateGameInteractor;
+import view.EnemyWaveLayer;
 import view.GamePanel;
 import view.KeyboardInput;
 import view.MapLayer;
+import view.SlimeSprite;
 
-/** Exercises the existing keyboard-to-player flow with the production map behind the player. */
+/** Exercises keyboard input, player movement and mob waves over the production map. */
 class MapMovementIntegrationTest {
     @Test
     void supportsWasdAndArrowKeysWithTheMapVisible() throws Exception {
@@ -37,18 +47,25 @@ class MapMovementIntegrationTest {
                 GameViewModel model = new GameViewModel(new GameState(456, 296, 48));
                 GameController controller = new GameController(
                         new UpdateGameInteractor(player, 960, 640, new GamePresenter(model)));
-                GamePanel panel = new GamePanel(model, 960, 640, layer);
+                EnemyWaveViewModel enemies = new EnemyWaveViewModel();
+                final EnemyWaveController enemyController = enemyController(player, enemies);
+                GamePanel panel = new GamePanel(model, 960, 640, layer,
+                        new EnemyWaveLayer(enemies, new SlimeSprite()));
                 KeyboardInput keyboard = new KeyboardInput();
 
                 keyboard.keyPressed(key(panel, KeyEvent.KEY_PRESSED, movement[0]));
                 tick(controller, keyboard);
+                tick(enemyController, keyboard);
                 keyboard.keyReleased(key(panel, KeyEvent.KEY_RELEASED, movement[0]));
                 tick(controller, keyboard);
+                tick(enemyController, keyboard);
 
                 int expectedX = 456 + movement[1];
                 int expectedY = 296 + movement[2];
                 assertEquals(expectedX, model.getState().getPlayerX());
                 assertEquals(expectedY, model.getState().getPlayerY());
+                assertEquals("Wave 1", enemies.getState().getWaveLabel());
+                assertEquals(3, enemies.getState().getEnemies().size());
                 BufferedImage image = paint(panel);
                 assertEquals(Color.WHITE.getRGB(), image.getRGB(expectedX, expectedY));
                 assertEquals(Color.BLUE.getRGB(), image.getRGB(24 * 32, 5 * 32));
@@ -65,7 +82,8 @@ class MapMovementIntegrationTest {
             GameViewModel model = new GameViewModel(new GameState(700, 128, 48));
             GameController controller = new GameController(
                     new UpdateGameInteractor(player, 960, 640, new GamePresenter(model)));
-            GamePanel panel = new GamePanel(model, 960, 640, layer);
+            GamePanel panel = new GamePanel(model, 960, 640, layer,
+                    new EnemyWaveLayer(new EnemyWaveViewModel(), new SlimeSprite()));
             KeyboardInput keyboard = new KeyboardInput();
 
             keyboard.keyPressed(key(panel, KeyEvent.KEY_PRESSED, KeyEvent.VK_D));
@@ -88,7 +106,18 @@ class MapMovementIntegrationTest {
         return new KeyEvent(panel, eventId, 0, 0, keyCode, KeyEvent.CHAR_UNDEFINED);
     }
 
+    private static EnemyWaveController enemyController(Player player, EnemyWaveViewModel model) {
+        return new EnemyWaveController(new GenerateMobWavesInteractor(
+                new InMemoryEnemyWaveDataAccessObject(player, new EnemyWave()),
+                new EnemyWavePresenter(model), new EdgeSpawnPositionStrategy(16),
+                new MobWaveSettings(3, 56, 34, 2), 960, 640));
+    }
+
     private static void tick(GameController controller, KeyboardInput keyboard) {
+        controller.tick(keyboard.isUp(), keyboard.isDown(), keyboard.isLeft(), keyboard.isRight());
+    }
+
+    private static void tick(EnemyWaveController controller, KeyboardInput keyboard) {
         controller.tick(keyboard.isUp(), keyboard.isDown(), keyboard.isLeft(), keyboard.isRight());
     }
 

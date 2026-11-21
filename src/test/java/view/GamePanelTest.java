@@ -3,6 +3,9 @@ package view;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import interface_adapter.enemy_wave.EnemyDisplayData;
+import interface_adapter.enemy_wave.EnemyWaveState;
+import interface_adapter.enemy_wave.EnemyWaveViewModel;
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
 import interface_adapter.map.MapState;
@@ -10,6 +13,7 @@ import interface_adapter.map.MapViewModel;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.util.List;
 import java.util.Map;
 import javax.swing.SwingUtilities;
 import org.junit.jupiter.api.Test;
@@ -22,7 +26,8 @@ class GamePanelTest {
             MapViewModel map = loadedMap();
             GameViewModel game = new GameViewModel(new GameState(32, 0, 16));
             MapRenderer renderer = new MapRenderer(new RecordingImages());
-            GamePanel panel = new GamePanel(game, 128, 96, new MapLayer(map, renderer));
+            GamePanel panel = new GamePanel(
+                    game, 128, 96, new MapLayer(map, renderer), emptyEnemyLayer());
 
             BufferedImage image = paint(panel);
 
@@ -40,7 +45,8 @@ class GamePanelTest {
             MapViewModel map = new MapViewModel();
             GameViewModel game = new GameViewModel(new GameState(100, 80, 8));
             MapRenderer renderer = new MapRenderer(new RecordingImages());
-            GamePanel panel = new GamePanel(game, 128, 96, new MapLayer(map, renderer));
+            GamePanel panel = new GamePanel(
+                    game, 128, 96, new MapLayer(map, renderer), emptyEnemyLayer());
             assertEquals(Color.BLACK.getRGB(), paint(panel).getRGB(0, 0));
 
             map.setState(new MapState(new int[][] {{0, 1}}, 32, ""));
@@ -57,7 +63,7 @@ class GamePanelTest {
             RecordingImages sprites = new RecordingImages();
             GameViewModel game = new GameViewModel(new GameState(0, 0, 16));
             GamePanel panel = new GamePanel(game, 128, 96,
-                    new MapLayer(loadedMap(), new MapRenderer(sprites)));
+                    new MapLayer(loadedMap(), new MapRenderer(sprites)), emptyEnemyLayer());
             paint(panel);
 
             game.setState(new GameState(32, 0, 16));
@@ -76,7 +82,7 @@ class GamePanelTest {
             MapViewModel map = loadedMap();
             MapRenderer renderer = new MapRenderer(new RecordingImages());
             GamePanel panel = new GamePanel(new GameViewModel(new GameState(0, 0, 16)), 960, 96,
-                    new MapLayer(map, renderer));
+                    new MapLayer(map, renderer), emptyEnemyLayer());
             paint(panel);
 
             map.setState(new MapState(new int[][] {{1, 0}, {0, 1}}, 32, "Map unavailable."));
@@ -98,7 +104,7 @@ class GamePanelTest {
             MapViewModel map = loadedMap();
             MapRenderer renderer = new MapRenderer(new RecordingImages());
             GamePanel panel = new GamePanel(new GameViewModel(new GameState(100, 80, 8)), 960, 96,
-                    new MapLayer(map, renderer));
+                    new MapLayer(map, renderer), emptyEnemyLayer());
             paint(panel);
 
             map.setState(new MapState(new int[][] {{9}}, 32, ""));
@@ -118,7 +124,7 @@ class GamePanelTest {
                     "Unable to load map: unknown terrain at line 20, column 30.\n"
                             + "Please check the map."));
             GamePanel panel = new GamePanel(new GameViewModel(new GameState(100, 100, 8)), 128, 128,
-                    new MapLayer(map, new MapRenderer(new RecordingImages())));
+                    new MapLayer(map, new MapRenderer(new RecordingImages())), emptyEnemyLayer());
 
             BufferedImage image = paint(panel);
 
@@ -134,7 +140,8 @@ class GamePanelTest {
         int[] before = new int[1];
         SwingUtilities.invokeAndWait(() -> {
             panel[0] = new CountingPanel(new GameViewModel(new GameState(0, 0, 16)),
-                    new MapLayer(map, new MapRenderer(new RecordingImages())));
+                    new MapLayer(map, new MapRenderer(new RecordingImages())),
+                    new EnemyWaveViewModel());
             panel[0].addNotify();
             before[0] = panel[0].repaints;
         });
@@ -158,15 +165,39 @@ class GamePanelTest {
     }
 
     @Test
-    void keepsTheOriginalCoreLoopConstructorWorking() throws Exception {
+    void drawsUpdatedEnemiesAboveTerrainAndBelowThePlayer() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            GamePanel panel = new GamePanel(new GameViewModel(new GameState(0, 0, 16)), 128, 96);
+            EnemyWaveViewModel enemies = new EnemyWaveViewModel();
+            CountingPanel panel = new CountingPanel(new GameViewModel(new GameState(16, 32, 16)),
+                    new MapLayer(loadedMap(), new MapRenderer(new RecordingImages())), enemies);
+            final BufferedImage before = paint(panel);
+            int repaintCount = panel.repaints;
 
-            BufferedImage image = paint(panel);
+            enemies.setState(new EnemyWaveState("", "",
+                    List.of(new EnemyDisplayData(0, 32, 56, 34, false, false)), 0));
 
-            assertEquals(Color.WHITE.getRGB(), image.getRGB(0, 0));
-            assertEquals(Color.BLACK.getRGB(), image.getRGB(32, 0));
+            assertEquals(repaintCount + 1, panel.repaints);
+            BufferedImage after = paint(panel);
+            assertEquals(Color.GREEN.getRGB(), after.getRGB(0, 0));
+            for (int y = 32; y < 48; y++) {
+                for (int x = 16; x < 32; x++) {
+                    assertEquals(Color.WHITE.getRGB(), after.getRGB(x, y));
+                }
+            }
+            int changedPixels = 0;
+            for (int y = 48; y < 64; y++) {
+                for (int x = 0; x < 56; x++) {
+                    if (before.getRGB(x, y) != after.getRGB(x, y)) {
+                        changedPixels++;
+                    }
+                }
+            }
+            assertTrue(changedPixels > 0, "Slime pixels should appear above the terrain.");
         });
+    }
+
+    private static EnemyWaveLayer emptyEnemyLayer() {
+        return new EnemyWaveLayer(new EnemyWaveViewModel(), new SlimeSprite());
     }
 
     private static MapViewModel loadedMap() {
@@ -204,8 +235,8 @@ class GamePanelTest {
     private static final class CountingPanel extends GamePanel {
         private int repaints;
 
-        private CountingPanel(GameViewModel game, MapLayer layer) {
-            super(game, 128, 96, layer);
+        private CountingPanel(GameViewModel game, MapLayer layer, EnemyWaveViewModel enemies) {
+            super(game, 128, 96, layer, new EnemyWaveLayer(enemies, new SlimeSprite()));
         }
 
         @Override
