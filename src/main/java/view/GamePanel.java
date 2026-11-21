@@ -7,34 +7,38 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.beans.PropertyChangeListener;
 import javax.swing.JPanel;
 
-/** Draws the current GameState. Only reads; never changes the game. */
+/** Draws terrain, enemies, the wizard, projectiles and map errors from display state. */
 public class GamePanel extends JPanel {
     private final GameViewModel viewModel;
     private final PlayerSprite playerSprite;
+    private final MapLayer mapLayer;
     private final EnemyWaveLayer enemyWaveLayer;
     private final ProjectileLayer projectileLayer;
+    private final PropertyChangeListener mapListener = event -> repaint();
 
     /**
-     * Creates the panel.
+     * Creates a panel with the terrain, player, enemy and spell visuals supplied by the app.
      *
-     * @param viewModel      the player's view model to read when painting
-     * @param playerSprite   how to draw the player
-     * @param enemyWaveLayer draws the mobs and wave heading
-     * @param projectileLayer draws flight, impact animations, and casting feedback
-     * @param width          preferred width, in pixels
-     * @param height         preferred height, in pixels
+     * @param viewModel non-null player display state
+     * @param playerSprite non-null player animation renderer
+     * @param mapLayer non-null terrain layer, drawn behind game objects
+     * @param enemyWaveLayer non-null enemy and wave-heading layer
+     * @param projectileLayer non-null flight, impact and casting-feedback layer
+     * @param width preferred panel width in pixels
+     * @param height preferred panel height in pixels
      */
-    public GamePanel(GameViewModel viewModel, PlayerSprite playerSprite,
+    public GamePanel(GameViewModel viewModel, PlayerSprite playerSprite, MapLayer mapLayer,
                      EnemyWaveLayer enemyWaveLayer, ProjectileLayer projectileLayer,
                      int width, int height) {
         this.viewModel = viewModel;
         this.playerSprite = playerSprite;
+        this.mapLayer = mapLayer;
         this.enemyWaveLayer = enemyWaveLayer;
         this.projectileLayer = projectileLayer;
-        // Repaint when the mob view model changes. Swing merges this with GameLoop's own
-        // repaint request for the same tick, so the panel is still painted once per frame.
+        // Swing can coalesce these requests with the game loop's repaint requests.
         enemyWaveLayer.whenStateChanges(() -> repaint());
         projectileLayer.whenStateChanges(() -> repaint());
         setPreferredSize(new Dimension(width, height));
@@ -44,17 +48,30 @@ public class GamePanel extends JPanel {
     }
 
     @Override
+    public void addNotify() {
+        super.addNotify();
+        mapLayer.addPropertyChangeListener(mapListener);
+    }
+
+    @Override
+    public void removeNotify() {
+        mapLayer.removePropertyChangeListener(mapListener);
+        super.removeNotify();
+    }
+
+    @Override
     protected void paintComponent(Graphics g) {
-        super.paintComponent(g);   // clears the screen with the background colour
+        super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
         // Keep pixel art sharp when it is scaled up.
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                 RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        mapLayer.draw(g2);
         GameState state = viewModel.getState();
 
-        enemyWaveLayer.paint(g2);   // mobs and wave heading (Generate Mob Waves)
-
+        enemyWaveLayer.paint(g2);
         playerSprite.draw(g2, state);
         projectileLayer.paint(g2, getHeight());
+        mapLayer.drawError(g2, getWidth());
     }
 }

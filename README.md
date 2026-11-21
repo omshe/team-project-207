@@ -5,7 +5,7 @@ Please keep this up-to-date with information about your project throughout the t
 The readme should include information such as:
 - a summary of what your application is all about
 - a list of the user stories, along with who is responsible for each one
-- information about the API(s) that your project uses 
+- information about the API(s) that your project uses
 - screenshots or animations demonstrating current functionality
 
 By keeping this README up-to-date,
@@ -21,14 +21,14 @@ SpellBook
 - Aayaan Singal
 
 - Omer Sheaffer
-  
+
 - Jordan Lin
-  
+
 - Seran Naventhan
 
 
 ## Project Description
-A wave based game where the user can draw patterns to cast spells onto waves of enemies. Throughout the game, the user can get upgrades and get more spells through chests, to fight more difficult enemies until all the waves are defeated, or the user loses all their life. 
+A wave based game where the user can draw patterns to cast spells onto waves of enemies. Throughout the game, the user can get upgrades and get more spells through chests, to fight more difficult enemies until all the waves are defeated, or the user loses all their life.
 
 ### Domain
 
@@ -50,6 +50,9 @@ As a player, I want to be able use spells by drawing them so that I can fight en
 ### User Story 4
 As a player, I want to be able to explore the map so I can fight new enemies, and get more rewards
 
+#### Current map MVP — Seran Naventhan
+As a player, I want to enter a world with visible dirt and water terrain so that I can see the arena where I will play.
+
 ### User Story 5
 As a user, I want to be able to log in so that I can save my data across multiple devices
 
@@ -65,7 +68,7 @@ Name: Move the Player
 
 Primary actor: User
 
-Preconditions: 
+Preconditions:
 The user is in the game loop, and not the login screen
 The player is alive (hp is not less than or equal to 0)
 Where the user is walking into is not a wall, or a blocked square
@@ -74,13 +77,13 @@ Trigger: The user presses the movement keys, which is w to move up, a to move le
 
 Success Outcome: The player moves to the tile corresponding to the key they pressed
 
-Main success scenario: 
+Main success scenario:
 The user presses one of the movement keys
 The system checks that the tile they are moving to is an allowed tile to move to
 The player’s coordinate is updated
-The player sprite is updated and displayed to the user 
+The player sprite is updated and displayed to the user
 
-Extensions: 
+Extensions:
 2a: The tile they are moving to is a wall
 The system recognizes that its a wall
 The player stays in place
@@ -180,21 +183,40 @@ Extensions:
 **MVP scope** The aim point determines the projectile's initial direction. The projectile continues until enemy contact or world exit. Enemy contact produces one visual impact, which disappears after its animation finishes. Health, damage, and enemy defeat are planned for later combat work.
 
 ### Use Case 5
-Name: Generate the world
+Name: Enter the world
 
 Primary Actor: Player
 
-Preconditions: The player is logged in
+Owner of the current map MVP: Seran Naventhan
 
-Trigger: The player clicks start game
+Preconditions: The game is available to start, and the player is not in an active run.
 
-Success Outcome: The world is created, with tiles and enemies spawning in
+Trigger: The player starts a game.
+
+Success Outcome: The player sees the complete dirt-and-water arena at its original tile size.
 
 Main Success Scenario:
-The user clicks start
-The map is generated
-Any entities that should be drawn are drawn
-The player enters the game loop, and can start to control the player
+1. The player starts a game.
+2. The game obtains the terrain for the starting arena.
+3. The player sees the complete arena, ready for play.
+
+Extensions:
+- 2a. No arena is identified: the player sees an explanation that an arena is required. No new arena is shown.
+- 2b. The arena is unavailable or cannot be read: the player sees a loading error. No new arena is shown.
+- 2c. The arena is empty or contains invalid terrain: the player sees an error explaining the problem,
+  including its location when available. No partial arena is shown.
+- 3a. The arena cannot be displayed: the player sees an explanation, and any previous complete
+  arena stays visible. A partially drawn replacement is not shown.
+
+On any failure, an already displayed arena remains unchanged. A later successful attempt replaces
+it and clears the error.
+
+Implementation status: the loading flow, production map, placeholder tile images and cached
+renderer are connected to startup and the game panel. Startup failures show an error dialog
+without opening a playable game; later map errors appear above the last complete background.
+Automated tests cover the startup builder, panel drawing and existing movement controls.
+Final verification is complete; the live display and keyboard checks were confirmed by Seran.
+Enemy spawning, player collision and camera behaviour are outside this map MVP.
 
 
 ### Use Case 6
@@ -208,7 +230,7 @@ Trigger: The player clicks on “Save Run Card”
 
 Success Outcome: A PNG run card containing the dungeon background and final run statistics is saved to the player’s chosen location.
 
-Main Success Scenario: 
+Main Success Scenario:
 1. The game opens a file save dialogue and suggests `dungeon-run.png`.
 2. The player chooses a destination and confirms the save.
 3. The game shows that the card is being generated and requests a finished image from PageShot. The card includes the dungeon background, a gradient overlay, the player’s display name/username, score, enemies defeated, time survived, and waves survived.
@@ -259,6 +281,9 @@ Extensions:
 | Omer Sheaffer | Cast a Spell |
 
 | Omer Sheaffer | Prepare a Spell |
+
+Current milestone ownership is recorded in `docs/specs/enemy-and-fireball.md`: Seran owns the
+tile-map portion of Enter the World. The table above records the earlier project allocation.
 
 ---
 
@@ -337,7 +362,7 @@ Position is a custom class describing their x and y coordinate.
 ---
 
 
-API ideas: 
+API ideas:
 https://goqr.me/api/doc/create-qr-code/ (share good run score as qr code)
 https://wiki.openstreetmap.org/wiki/Overpass_API? (gen new random world each game using irl places and mapping irl structures to in-game obstacles)
 https://pageshot.site/docs (share dungeon run png. We give it a snapshot of the dungeon + the run stats as text + a color gradient to overlay above the snapshot and below the text. It formats it as a single png image and returns it)
@@ -381,8 +406,12 @@ Requires JDK 11+ (17 recommended).
 - IntelliJ: open the project and run `app.Main`.
 - Maven: `mvn compile exec:java -Dexec.mainClass=app.Main`, or `mvn compile` then `java -cp target/classes app.Main`.
 
-Move the white box with WASD or the arrow keys. Your first move starts wave 1: three slimes
-appear near the edges and chase you, stopping when they reach you.
+Move the wizard with WASD or the arrow keys over the green dirt and blue water map.
+Your first move starts wave 1: three slimes appear near the edges and chase you, stopping
+when they reach you. Player-water collision is deferred, so the player can cross water.
+Enemy-water collision is also not wired into the enemy movement use case yet.
+Left-click to cast a fireball toward the pointer. Fireballs cross water and disappear on
+enemy contact or when leaving the arena; enemy damage is deferred.
 
 ### Tests, coverage and style
 
@@ -392,6 +421,7 @@ appear near the edges and chase you, stopping when they reach you.
   (`checkstyle/google_checks.xml`). It reports without failing the build; see
   `checkstyle/checkstyle-suppressions.xml` for the two rules that clash with AGENTS.md
   (underscore package names and 4-space indentation).
+- For environments without a desktop display, use `mvn -Djava.awt.headless=true test`.
 
 ### Architecture (core loop)
 
@@ -399,7 +429,80 @@ appear near the edges and chase you, stopping when they reach you.
 - `use_case/update_game`: one tick of game rules (`UpdateGameInteractor`) with input/output boundaries.
 - `interface_adapter/game`: `GameController` (key state -> request), `GamePresenter` + `GameViewModel` (result -> what to draw, including which `PlayerAnimation` to play and for how many ticks).
 - `view`: `GameWindow` (JFrame), `GamePanel` (draws), `KeyboardInput` (records held keys), `PlayerSprite` + `SpriteAnimation` (draw the wizard's idle/walk animations from `src/main/resources/sprites/wizard`, flipped when facing left).
-- `app`: `GameLoop` (60 ticks/s thread: input -> player update -> mob-wave update -> repaint) and `Main` (builds and wires everything).
+- `app`: `GameLoop` (60 ticks/s thread: input -> player update -> mob-wave update -> queued casts and projectile update -> repaint) and `Main` (builds and wires everything).
+
+### Architecture (Load Map, Seran)
+
+Loads the terrain once at startup and prepares a cached map image, separately from the per-tick use cases.
+The map MVP is implemented and verified, including startup and game-panel integration.
+
+- `entity/TileType`: interface for immutable terrain types. `WaterTileType` has ID 0 and blocks walking; `DirtTileType` has ID 1 and permits walking.
+- `entity/TileTypeRegistry`: resolves IDs through registered terrain objects and rejects duplicate or unknown IDs.
+- `entity/TileMap`: an immutable grid of terrain objects, pixel-coordinate lookup and walkability (no Swing or file access).
+- `use_case/load_map`: `LoadMapInputBoundary` and immutable `LoadMapInputData` accept a map name. `LoadMapInteractor` loads through `MapDataAccessInterface`, then sends an immutable `LoadMapOutputData` snapshot of tile IDs and tile size through `LoadMapOutputBoundary`. Invalid names and `MapLoadingException` failures go through the fail output; the input boundary returns `void`.
+- `data_access/FileMapDataAccessObject`: loads UTF-8 resources from `maps/`, resolves IDs through the supplied terrain registry, and validates the tile grid.
+- `interface_adapter/map`: `MapController` wraps the map name; `MapPresenter` converts success or failure into immutable `MapState`. `MapViewModel` stores that state and fires a `state` property-change notification. The map state contains IDs, dimensions and error text, with no entities, images or file APIs. A failed load preserves the previous map; success clears the error.
+- `view/TileImageSource`: the view-only contract for looking up already loaded images by terrain ID. This is a rendering helper interface, not a use-case boundary.
+- `view/TileSprites`: loads an injected mapping of IDs to classpath image resources once and checks their dimensions. Missing, unreadable or incorrectly sized images produce an `IOException` with the resource path; `MapBuilder` reports it through the startup error callback.
+- `view/MapRenderer`: depends on `TileImageSource` and reads only `MapState`. It builds a cached image at the map's pixel dimensions, rebuilds when the grid or tile size changes, and preserves the last complete image if rendering fails. Loading/rendering error text is available through `getErrorMessage()`.
+- `view/MapLayer`: reads `MapViewModel`, draws the cached background at the top-left, and wraps error text into a banner. `GamePanel` receives the map, enemy-wave and projectile layers plus the player sprite. It draws terrain, enemies, the wizard, projectiles and then any map error. It subscribes to map changes while displayed and removes its listener when detached.
+- `view/GameWindow.showStartupError`: displays a failure dialog before a playable window is opened.
+- `app/MapBuilder`: wires the map registry, file reader, use case, presenter and renderer; requests the starting map through `MapController`; and returns a prepared `MapLayer`. A map or image failure reports one error and returns no layer.
+- `app/Main`: supplies `level1.txt`, tile size 32 and the image mappings to `MapBuilder`. It opens the window and starts the existing loop only after map preparation succeeds.
+
+The map flow is separate from per-tick player updates. Interactor tests use in-memory data
+access; an integration test connects the real file reader, controller, interactor, presenter
+and renderer using the shipped resources. Startup wiring lives in `app`, and `GamePanel`
+draws the cached image through `MapLayer`. Property-change listeners only request repainting,
+which is safe from another thread; Swing paints and uses the renderer on its event thread.
+The first paint reads the current state, including when loading finished before subscription.
+Cached tile and map images are shared within the view and must be treated as read-only.
+
+#### Map resource format
+
+The file reader loads names such as `level1.txt` from `maps/` on the classpath, so it does not
+depend on the current working directory. The production arena is
+`src/main/resources/maps/level1.txt`; small test maps live in `src/test/resources/maps/`.
+
+Each non-comment line is one row of integer tile IDs, separated by whitespace. With the MVP
+terrain registry, `0` is water and `1` is dirt. Blank lines and lines whose first non-whitespace
+character is `#` are skipped. Every tile row must have the same number of columns. The tile size
+is supplied when constructing the reader; the production arena uses 32-pixel tiles.
+
+Missing, empty, unreadable, or malformed maps produce `MapLoadingException`. Format errors
+identify the map name, original file line, and tile column, counted from one. Columns count
+tile entries, not characters. `LoadMapInteractor` catches loading failures and sends their
+explanation to the presenter, which adds "Unable to load map:" to the view-model error text.
+Startup displays that error in a dialog and does not start the loop. If a future reload fails
+after startup, the panel displays the error above the previously rendered map.
+
+#### Map resources and rendering
+
+`level1.txt` has 30 columns and 20 rows, producing a 960 × 640 map at a tile size of 32.
+The centre and outer edges are dirt, with two water areas elsewhere. The placeholder sprites
+are `src/main/resources/tiles/dirt.png` (solid green, `#00FF00`) and
+`src/main/resources/tiles/water.png` (solid blue, `#0000FF`), both opaque 32 × 32 PNGs.
+`Main` supplies the mapping `0 -> /tiles/water.png`, `1 -> /tiles/dirt.png`.
+
+The renderer reads the IDs supplied by the map view model and places each image in its tile
+cell. It uses the map's dimensions rather than fitting the map to the window. Repainting the
+same state reuses the cached image; error-only changes also reuse it. The helpers do not know
+about player movement, enemy behaviour, fireballs or a camera.
+
+To edit the map, change the numbers in `level1.txt` and rebuild resources before the next run
+(for example, with `mvn compile`). Player collision and detailed tile artwork are deferred.
+The terrain data marks water as non-walkable for the enemy feature to use; integrating enemy
+movement is separate work. Fireballs should cross water.
+
+#### Map verification
+
+See the [map acceptance checks](docs/specs/enemy-and-fireball.md#final-verification-original-step-8)
+for the evidence and steps to repeat the checks.
+
+The image below shows the original map MVP before wizard animation was merged. It uses
+the shipped map and tile images, with a placeholder player at its starting position.
+
+![Map MVP: green dirt, two blue water areas and the white player](docs/images/map-mvp.png)
 
 ### Architecture (Generate Mob Waves, Aayaan)
 
