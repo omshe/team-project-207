@@ -406,10 +406,12 @@ Requires JDK 11+ (17 recommended).
 - IntelliJ: open the project and run `app.Main`.
 - Maven: `mvn compile exec:java -Dexec.mainClass=app.Main`, or `mvn compile` then `java -cp target/classes app.Main`.
 
-Move the white box with WASD or the arrow keys over the green dirt and blue water map.
+Move the wizard with WASD or the arrow keys over the green dirt and blue water map.
 Your first move starts wave 1: three slimes appear near the edges and chase you, stopping
 when they reach you. Player-water collision is deferred, so the player can cross water.
 Enemy-water collision is also not wired into the enemy movement use case yet.
+Left-click to cast a fireball toward the pointer. Fireballs cross water and disappear on
+enemy contact or when leaving the arena; enemy damage is deferred.
 
 ### Tests, coverage and style
 
@@ -423,11 +425,11 @@ Enemy-water collision is also not wired into the enemy movement use case yet.
 
 ### Architecture (core loop)
 
-- `entity/Player`: position, size and speed (no Swing).
+- `entity/Player`: position, size, speed, facing direction and whether it is moving (no Swing).
 - `use_case/update_game`: one tick of game rules (`UpdateGameInteractor`) with input/output boundaries.
-- `interface_adapter/game`: `GameController` (key state -> request), `GamePresenter` + `GameViewModel` (result -> what to draw).
-- `view`: `GameWindow` (JFrame), `GamePanel` (draws), `KeyboardInput` (records held keys).
-- `app`: `GameLoop` (60 ticks/s thread: input -> player update -> mob-wave update -> repaint) and `Main` (builds and wires everything).
+- `interface_adapter/game`: `GameController` (key state -> request), `GamePresenter` + `GameViewModel` (result -> what to draw, including which `PlayerAnimation` to play and for how many ticks).
+- `view`: `GameWindow` (JFrame), `GamePanel` (draws), `KeyboardInput` (records held keys), `PlayerSprite` + `SpriteAnimation` (draw the wizard's idle/walk animations from `src/main/resources/sprites/wizard`, flipped when facing left).
+- `app`: `GameLoop` (60 ticks/s thread: input -> player update -> mob-wave update -> queued casts and projectile update -> repaint) and `Main` (builds and wires everything).
 
 ### Architecture (Load Map, Seran)
 
@@ -443,7 +445,7 @@ The map MVP is implemented and verified, including startup and game-panel integr
 - `view/TileImageSource`: the view-only contract for looking up already loaded images by terrain ID. This is a rendering helper interface, not a use-case boundary.
 - `view/TileSprites`: loads an injected mapping of IDs to classpath image resources once and checks their dimensions. Missing, unreadable or incorrectly sized images produce an `IOException` with the resource path; `MapBuilder` reports it through the startup error callback.
 - `view/MapRenderer`: depends on `TileImageSource` and reads only `MapState`. It builds a cached image at the map's pixel dimensions, rebuilds when the grid or tile size changes, and preserves the last complete image if rendering fails. Loading/rendering error text is available through `getErrorMessage()`.
-- `view/MapLayer`: reads `MapViewModel`, draws the cached background at the top-left, and wraps error text into a banner. `GamePanel` receives both map and enemy-wave layers. It draws terrain, enemies, the player and then any map error. It subscribes to map changes while displayed and removes its listener when detached.
+- `view/MapLayer`: reads `MapViewModel`, draws the cached background at the top-left, and wraps error text into a banner. `GamePanel` receives the map, enemy-wave and projectile layers plus the player sprite. It draws terrain, enemies, the wizard, projectiles and then any map error. It subscribes to map changes while displayed and removes its listener when detached.
 - `view/GameWindow.showStartupError`: displays a failure dialog before a playable window is opened.
 - `app/MapBuilder`: wires the map registry, file reader, use case, presenter and renderer; requests the starting map through `MapController`; and returns a prepared `MapLayer`. A map or image failure reports one error and returns no layer.
 - `app/Main`: supplies `level1.txt`, tile size 32 and the image mappings to `MapBuilder`. It opens the window and starts the existing loop only after map preparation succeeds.
@@ -497,8 +499,8 @@ movement is separate work. Fireballs should cross water.
 See the [map acceptance checks](docs/specs/enemy-and-fireball.md#final-verification-original-step-8)
 for the evidence and steps to repeat the checks.
 
-The image below is an offscreen render of the production `GamePanel`, using the shipped map
-and tile images with the player at its starting position.
+The image below shows the original map MVP before wizard animation was merged. It uses
+the shipped map and tile images, with a placeholder player at its starting position.
 
 ![Map MVP: green dirt, two blue water areas and the white player](docs/images/map-mvp.png)
 
