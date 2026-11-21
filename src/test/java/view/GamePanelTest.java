@@ -1,24 +1,23 @@
 package view;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
 import interface_adapter.map.MapState;
 import interface_adapter.map.MapViewModel;
-import org.junit.jupiter.api.Test;
-
-import javax.swing.SwingUtilities;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.Map;
+import javax.swing.SwingUtilities;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-/** Checks the actual panel's layer order, state updates and notification lifecycle on Swing's thread. */
+/** Checks the panel's layer order, state updates and listener lifecycle on Swing's thread. */
 class GamePanelTest {
     @Test
-    void drawsALoadedMapBehindThePlayerWithoutStretchingIt() throws Exception {
+    void drawsLoadedMapBehindThePlayerWithoutStretchingIt() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             MapViewModel map = loadedMap();
             GameViewModel game = new GameViewModel(new GameState(32, 0, 16));
@@ -36,7 +35,7 @@ class GamePanelTest {
     }
 
     @Test
-    void drawsAMapLoadedAfterThePanelWasConstructed() throws Exception {
+    void drawsMapLoadedAfterThePanelWasConstructed() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             MapViewModel map = new MapViewModel();
             GameViewModel game = new GameViewModel(new GameState(100, 80, 8));
@@ -116,7 +115,8 @@ class GamePanelTest {
         SwingUtilities.invokeAndWait(() -> {
             MapViewModel map = new MapViewModel();
             map.setState(new MapState(new int[0][0], 0,
-                    "Unable to load map: unknown terrain at line 20, column 30.\nPlease check the map."));
+                    "Unable to load map: unknown terrain at line 20, column 30.\n"
+                            + "Please check the map."));
             GamePanel panel = new GamePanel(new GameViewModel(new GameState(100, 100, 8)), 128, 128,
                     new MapLayer(map, new MapRenderer(new RecordingImages())));
 
@@ -177,7 +177,8 @@ class GamePanelTest {
 
     private static BufferedImage paint(GamePanel panel) {
         panel.setSize(panel.getPreferredSize());
-        BufferedImage image = new BufferedImage(panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        BufferedImage image = new BufferedImage(
+                panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = image.createGraphics();
         try {
             panel.paint(graphics);
@@ -187,7 +188,8 @@ class GamePanelTest {
         return image;
     }
 
-    private static boolean hasWhiteText(BufferedImage image, int left, int top, int right, int bottom) {
+    private static boolean hasWhiteText(BufferedImage image,
+                                        int left, int top, int right, int bottom) {
         for (int y = top; y < bottom; y++) {
             for (int x = left; x < right; x++) {
                 if (image.getRGB(x, y) == Color.WHITE.getRGB()) {
@@ -224,7 +226,8 @@ class GamePanelTest {
             lookups++;
             BufferedImage image = images.get(tileId);
             if (image == null) {
-                throw new IllegalArgumentException("No tile image configured for terrain ID: " + tileId);
+                throw new IllegalArgumentException(
+                        "No tile image configured for terrain ID: " + tileId);
             }
             return image;
         }

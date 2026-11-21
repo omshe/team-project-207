@@ -1,8 +1,8 @@
 package use_case.load_map;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+
+import org.junit.jupiter.api.Test;
 
 /** Checks that mutable arrays cannot change a published use-case result. */
 class LoadMapOutputDataTest {

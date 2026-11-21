@@ -1,14 +1,13 @@
 package entity;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /** Checks terrain registration, ID validation, and support for additional implementations. */
 class TileTypeRegistryTest {
@@ -85,7 +84,7 @@ class TileTypeRegistryTest {
     }
 
     @Test
-    void rejectsANullList() {
+    void rejectsNullList() {
         assertThrows(IllegalArgumentException.class, () -> new TileTypeRegistry(null));
     }
 

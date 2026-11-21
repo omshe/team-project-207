@@ -1,24 +1,23 @@
 package data_access;
 
-import entity.DirtTileType;
-import entity.TileMap;
-import entity.TileType;
-import entity.TileTypeRegistry;
-import entity.WaterTileType;
-import org.junit.jupiter.api.Test;
-import use_case.load_map.MapDataAccessInterface;
-import use_case.load_map.MapLoadingException;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import entity.DirtTileType;
+import entity.TileMap;
+import entity.TileType;
+import entity.TileTypeRegistry;
+import entity.WaterTileType;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import use_case.load_map.MapDataAccessInterface;
+import use_case.load_map.MapLoadingException;
 
 /** Checks classpath loading and the map format, including useful failure locations. */
 class FileMapDataAccessObjectTest {
@@ -28,7 +27,7 @@ class FileMapDataAccessObjectTest {
     private final FileMapDataAccessObject reader = new FileMapDataAccessObject(registry, 32);
 
     @Test
-    void loadsAClasspathMapThroughTheUseCaseInterface() throws MapLoadingException {
+    void loadsClasspathMapThroughTheUseCaseInterface() throws MapLoadingException {
         MapDataAccessInterface maps = reader;
 
         TileMap map = maps.load("small-map.txt");
@@ -55,7 +54,8 @@ class FileMapDataAccessObjectTest {
 
     @Test
     void acceptsCommentsWhitespaceAndWindowsLineEndings() throws IOException, MapLoadingException {
-        TileMap map = parse("  # terrain: eau et terre\r\n\r\n  1  \t0  \r\n\t\r\n # another comment\r\n0\t1\r\n");
+        TileMap map = parse("  # terrain: eau et terre\r\n\r\n  1  \t0  \r\n"
+                + "\t\r\n # another comment\r\n0\t1\r\n");
 
         assertEquals(2, map.getRowCount());
         assertEquals(2, map.getColumnCount());
@@ -64,7 +64,7 @@ class FileMapDataAccessObjectTest {
     }
 
     @Test
-    void reportsTheFirstMissingColumnOfAShortRow() {
+    void reportsFirstMissingColumnOfShortRow() {
         MapLoadingException error = assertThrows(MapLoadingException.class,
                 () -> parse("1 0 1\n# comment\n1 0\n"));
 
@@ -73,7 +73,7 @@ class FileMapDataAccessObjectTest {
     }
 
     @Test
-    void reportsTheFirstExtraColumnOfALongRow() {
+    void reportsFirstExtraColumnOfLongRow() {
         MapLoadingException error = assertThrows(MapLoadingException.class,
                 () -> parse("1 0\n0 1 0\n"));
 
@@ -126,7 +126,7 @@ class FileMapDataAccessObjectTest {
     }
 
     @Test
-    void reportsAMissingResourceByName() {
+    void reportsMissingResourceByName() {
         MapLoadingException error = assertThrows(MapLoadingException.class,
                 () -> reader.load("missing-map.txt"));
 
@@ -155,7 +155,8 @@ class FileMapDataAccessObjectTest {
     @Test
     void rejectsNullAndBlankMapNames() {
         for (String name : new String[] {null, "", " \t"}) {
-            MapLoadingException error = assertThrows(MapLoadingException.class, () -> reader.load(name));
+            MapLoadingException error = assertThrows(
+                    MapLoadingException.class, () -> reader.load(name));
             assertTrue(error.getMessage().contains("Map name must not be blank"));
         }
     }
@@ -176,12 +177,15 @@ class FileMapDataAccessObjectTest {
     @Test
     void rejectsInvalidReaderConfiguration() {
         assertThrows(IllegalArgumentException.class, () -> new FileMapDataAccessObject(null, 32));
-        assertThrows(IllegalArgumentException.class, () -> new FileMapDataAccessObject(registry, 0));
-        assertThrows(IllegalArgumentException.class, () -> new FileMapDataAccessObject(registry, -1));
+        assertThrows(IllegalArgumentException.class,
+                () -> new FileMapDataAccessObject(registry, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> new FileMapDataAccessObject(registry, -1));
     }
 
     @Test
-    void resolvesAdditionalTerrainTypesThroughTheRegistry() throws IOException, MapLoadingException {
+    void resolvesAdditionalTerrainTypesThroughTheRegistry()
+            throws IOException, MapLoadingException {
         TileType customTerrain = new TileType() {
             @Override
             public int getId() {
@@ -204,7 +208,7 @@ class FileMapDataAccessObjectTest {
     }
 
     @Test
-    void wrapsReadFailuresWithoutExposingAnIOException() throws IOException {
+    void wrapsReadFailuresWithoutExposingIoExceptions() throws IOException {
         IOException cause = new IOException("read failed");
         try (BufferedReader input = new BufferedReader(new StringReader("")) {
             @Override
@@ -221,8 +225,9 @@ class FileMapDataAccessObjectTest {
     }
 
     @Test
-    void wrapsInvalidMapDimensionsAsALoadingFailure() throws IOException {
-        FileMapDataAccessObject hugeTiles = new FileMapDataAccessObject(registry, Integer.MAX_VALUE);
+    void wrapsInvalidMapDimensionsAsLoadingFailure() throws IOException {
+        FileMapDataAccessObject hugeTiles = new FileMapDataAccessObject(
+                registry, Integer.MAX_VALUE);
         try (BufferedReader input = new BufferedReader(new StringReader("1 0"))) {
             MapLoadingException error = assertThrows(MapLoadingException.class,
                     () -> hugeTiles.parse(input, "oversized.txt"));

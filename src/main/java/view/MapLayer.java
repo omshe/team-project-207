@@ -1,7 +1,6 @@
 package view;
 
 import interface_adapter.map.MapViewModel;
-
 import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
@@ -17,12 +16,22 @@ public final class MapLayer {
     private final MapViewModel viewModel;
     private final MapRenderer renderer;
 
+    /**
+     * Connects map display state to its cached renderer.
+     *
+     * @param viewModel source of map display snapshots and change notifications
+     * @param renderer renderer used on Swing's event thread
+     */
     public MapLayer(MapViewModel viewModel, MapRenderer renderer) {
         this.viewModel = viewModel;
         this.renderer = renderer;
     }
 
-    /** Draws the latest map at its original size. Called on Swing's event thread. */
+    /**
+     * Draws the latest map at its original size. Called on Swing's event thread.
+     *
+     * @param graphics drawing context supplied by the panel
+     */
     public void draw(Graphics2D graphics) {
         BufferedImage image = renderer.render(viewModel.getState());
         if (image != null) {
@@ -30,7 +39,12 @@ public final class MapLayer {
         }
     }
 
-    /** Draws any loading or rendering error above the game content after draw has run. */
+    /**
+     * Draws any loading or rendering error above the game content after draw has run.
+     *
+     * @param graphics drawing context supplied by the panel
+     * @param panelWidth available width in pixels for the error banner
+     */
     public void drawError(Graphics2D graphics, int panelWidth) {
         String error = renderer.getErrorMessage();
         if (error.isEmpty()) {

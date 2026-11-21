@@ -35,11 +35,13 @@ public final class TileMap {
         this.tiles = new TileType[tiles.length][columns];
         for (int row = 0; row < tiles.length; row++) {
             if (tiles[row] == null || tiles[row].length != columns) {
-                throw new IllegalArgumentException("Row " + row + " must contain " + columns + " tiles.");
+                throw new IllegalArgumentException(
+                        "Row " + row + " must contain " + columns + " tiles.");
             }
             for (int col = 0; col < columns; col++) {
                 if (tiles[row][col] == null) {
-                    throw new IllegalArgumentException("Tile at column " + col + ", row " + row + " is null.");
+                    throw new IllegalArgumentException(
+                            "Tile at column " + col + ", row " + row + " is null.");
                 }
                 this.tiles[row][col] = tiles[row][col];
             }
@@ -81,7 +83,8 @@ public final class TileMap {
      */
     public TileType getTile(int col, int row) {
         if (col < 0 || col >= getColumnCount() || row < 0 || row >= getRowCount()) {
-            throw new IndexOutOfBoundsException("Tile coordinates out of bounds: (" + col + ", " + row + ")");
+            throw new IndexOutOfBoundsException(
+                    "Tile coordinates out of bounds: (" + col + ", " + row + ")");
         }
         return tiles[row][col];
     }
@@ -97,7 +100,8 @@ public final class TileMap {
      */
     public TileType tileAtPixel(double x, double y) {
         if (!containsPixel(x, y)) {
-            throw new IndexOutOfBoundsException("Pixel coordinates out of bounds: (" + x + ", " + y + ")");
+            throw new IndexOutOfBoundsException(
+                    "Pixel coordinates out of bounds: (" + x + ", " + y + ")");
         }
         return getTile((int) (x / tileSize), (int) (y / tileSize));
     }

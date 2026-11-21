@@ -21,10 +21,20 @@ public final class MapViewModel {
         support.firePropertyChange("state", null, state);
     }
 
+    /**
+     * Registers a listener for state notifications on the publishing thread.
+     *
+     * @param listener observer to notify when the presenter publishes state
+     */
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         support.addPropertyChangeListener(listener);
     }
 
+    /**
+     * Removes a previously registered state listener.
+     *
+     * @param listener observer whose registration should be removed
+     */
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         support.removePropertyChangeListener(listener);
     }

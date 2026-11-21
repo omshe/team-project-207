@@ -1,18 +1,17 @@
 package interface_adapter.map;
 
-import org.junit.jupiter.api.Test;
-import use_case.load_map.LoadMapOutputData;
-
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.ArrayList;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import use_case.load_map.LoadMapOutputData;
 
 /** Checks display data, failure recovery and view notifications without Swing. */
 class MapPresenterTest {
@@ -20,7 +19,7 @@ class MapPresenterTest {
     private final MapPresenter presenter = new MapPresenter(viewModel);
 
     @Test
-    void startsWithoutAMapOrAnError() {
+    void startsWithNoMapAndNoError() {
         MapState state = viewModel.getState();
 
         assertFalse(state.hasMap());
@@ -57,7 +56,7 @@ class MapPresenterTest {
     }
 
     @Test
-    void presentsAnInitialFailureWithoutInventingAMap() {
+    void presentsInitialFailureWithNoMap() {
         List<PropertyChangeEvent> events = new ArrayList<>();
         viewModel.addPropertyChangeListener(event -> events.add(event));
 
@@ -72,7 +71,7 @@ class MapPresenterTest {
     @Test
     void preservesThePreviousMapAndErrorLocationWhenAnotherLoadFails() {
         presenter.prepareSuccessView(new LoadMapOutputData(new int[][] {{42, 0}}, 16));
-        MapState previous = viewModel.getState();
+        final MapState previous = viewModel.getState();
 
         presenter.prepareFailView("Map 'bad.txt', line 4, column 2: Unknown tile ID: 9.");
 
@@ -86,7 +85,7 @@ class MapPresenterTest {
     }
 
     @Test
-    void clearsAnEarlierErrorWhenANewMapLoads() {
+    void clearsEarlierErrorWhenNewMapLoads() {
         presenter.prepareSuccessView(new LoadMapOutputData(new int[][] {{1, 0}}, 32));
         presenter.prepareFailView("Map unavailable.");
 
@@ -101,7 +100,7 @@ class MapPresenterTest {
     }
 
     @Test
-    void notifiesForRepeatedFailuresAndSupportsRemovingAListener() {
+    void notifiesForRepeatedFailuresAndSupportsListenerRemoval() {
         List<PropertyChangeEvent> events = new ArrayList<>();
         PropertyChangeListener listener = event -> events.add(event);
         viewModel.addPropertyChangeListener(listener);

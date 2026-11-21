@@ -3,9 +3,6 @@ package data_access;
 import entity.TileMap;
 import entity.TileType;
 import entity.TileTypeRegistry;
-import use_case.load_map.MapDataAccessInterface;
-import use_case.load_map.MapLoadingException;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,6 +10,8 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import use_case.load_map.MapDataAccessInterface;
+import use_case.load_map.MapLoadingException;
 
 /** Reads UTF-8 tile maps from classpath resources under maps/. */
 public final class FileMapDataAccessObject implements MapDataAccessInterface {
@@ -50,7 +49,8 @@ public final class FileMapDataAccessObject implements MapDataAccessInterface {
         if (stream == null) {
             throw new MapLoadingException("Map resource not found: maps/" + mapName);
         }
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(stream, StandardCharsets.UTF_8))) {
             return parse(reader, mapName);
         } catch (IOException error) {
             throw new MapLoadingException("Could not read map '" + mapName + "'.", error);
@@ -95,11 +95,13 @@ public final class FileMapDataAccessObject implements MapDataAccessInterface {
         } catch (IOException error) {
             throw new MapLoadingException("Could not read map '" + mapName + "'.", error);
         } catch (IllegalArgumentException error) {
-            throw new MapLoadingException("Invalid map '" + mapName + "': " + error.getMessage(), error);
+            throw new MapLoadingException(
+                    "Invalid map '" + mapName + "': " + error.getMessage(), error);
         }
     }
 
-    private TileType parseTile(String token, String mapName, int line, int column) throws MapLoadingException {
+    private TileType parseTile(String token, String mapName, int line, int column)
+            throws MapLoadingException {
         int id;
         try {
             id = Integer.parseInt(token);

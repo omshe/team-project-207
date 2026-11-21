@@ -1,11 +1,11 @@
 package view;
 
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import javax.imageio.ImageIO;
 
 /** Loads and caches the images associated with explicitly configured terrain IDs. */
 public final class TileSprites implements TileImageSource {
@@ -22,12 +22,14 @@ public final class TileSprites implements TileImageSource {
      */
     public TileSprites(Map<Integer, String> resourcePaths, int tileSize) throws IOException {
         if (resourcePaths == null || tileSize <= 0) {
-            throw new IllegalArgumentException("Tile resources must be supplied with a positive tile size.");
+            throw new IllegalArgumentException(
+                    "Tile resources must be supplied with a positive tile size.");
         }
         for (Map.Entry<Integer, String> entry : resourcePaths.entrySet()) {
             String path = entry.getValue();
             if (entry.getKey() == null || path == null || path.isBlank() || !path.startsWith("/")) {
-                throw new IllegalArgumentException("Each tile ID needs an absolute classpath image path.");
+                throw new IllegalArgumentException(
+                        "Each tile ID needs an absolute classpath image path.");
             }
             images.put(entry.getKey(), loadImage(path, tileSize));
         }
@@ -36,13 +38,16 @@ public final class TileSprites implements TileImageSource {
     /**
      * Returns the shared cached image for an ID. Callers must treat it as read-only.
      *
+     * @param tileId terrain ID to look up
+     * @return the already loaded image associated with the ID
      * @throws IllegalArgumentException if no image was configured for this terrain ID
      */
     @Override
     public BufferedImage getImage(int tileId) {
         BufferedImage image = images.get(tileId);
         if (image == null) {
-            throw new IllegalArgumentException("No tile image configured for terrain ID: " + tileId);
+            throw new IllegalArgumentException(
+                    "No tile image configured for terrain ID: " + tileId);
         }
         return image;
     }
@@ -57,12 +62,14 @@ public final class TileSprites implements TileImageSource {
                 throw new IOException("Resource is not a readable image: " + path);
             }
             if (image.getWidth() != tileSize || image.getHeight() != tileSize) {
-                throw new IOException("Tile image " + path + " must be " + tileSize + " x " + tileSize
+                throw new IOException("Tile image " + path + " must be "
+                        + tileSize + " x " + tileSize
                         + " pixels, but is " + image.getWidth() + " x " + image.getHeight() + ".");
             }
             return image;
         } catch (IOException error) {
-            throw new IOException("Could not load tile image '" + path + "': " + error.getMessage(), error);
+            throw new IOException(
+                    "Could not load tile image '" + path + "': " + error.getMessage(), error);
         }
     }
 }

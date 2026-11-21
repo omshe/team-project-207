@@ -1,23 +1,23 @@
 package data_access;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import entity.DirtTileType;
 import entity.TileMap;
 import entity.TileTypeRegistry;
 import entity.WaterTileType;
-import org.junit.jupiter.api.Test;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /** Verifies the real MVP arena resource through the production map reader. */
 class ProductionMapTest {
     @Test
     void loadsTheScreenSizedArenaWithBothTerrainTypesAndAnOpenCentre() throws Exception {
-        TileTypeRegistry registry = new TileTypeRegistry(List.of(new WaterTileType(), new DirtTileType()));
+        TileTypeRegistry registry = new TileTypeRegistry(
+                List.of(new WaterTileType(), new DirtTileType()));
         TileMap map = new FileMapDataAccessObject(registry, 32).load("level1.txt");
 
         assertEquals(30, map.getColumnCount());

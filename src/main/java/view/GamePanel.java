@@ -2,13 +2,12 @@ package view;
 
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
-
-import javax.swing.JPanel;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.beans.PropertyChangeListener;
+import javax.swing.JPanel;
 
 /** Draws the map background, player and any map error. Only reads display state. */
 public class GamePanel extends JPanel {
@@ -57,7 +56,8 @@ public class GamePanel extends JPanel {
         GameState state = viewModel.getState();
 
         g2.setColor(Color.WHITE);
-        g2.fillRect(state.getPlayerX(), state.getPlayerY(), state.getPlayerSize(), state.getPlayerSize());
+        g2.fillRect(state.getPlayerX(), state.getPlayerY(),
+                state.getPlayerSize(), state.getPlayerSize());
         if (mapLayer != null) {
             mapLayer.drawError(g2, getWidth());
         }

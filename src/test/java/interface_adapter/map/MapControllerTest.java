@@ -1,15 +1,14 @@
 package interface_adapter.map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import use_case.load_map.LoadMapInputBoundary;
 import use_case.load_map.LoadMapInputData;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** Checks that the controller forwards requests and leaves validation to the use case. */
 class MapControllerTest {

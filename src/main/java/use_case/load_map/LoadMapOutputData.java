@@ -8,6 +8,9 @@ public final class LoadMapOutputData {
     /**
      * Copies the IDs of an already validated map, arranged as rows then columns.
      * The grid must be non-null, non-empty and rectangular, and tileSize must be positive.
+     *
+     * @param tileIds validated grid of terrain IDs to copy
+     * @param tileSize width and height of each tile in pixels
      */
     public LoadMapOutputData(int[][] tileIds, int tileSize) {
         this.tileIds = copyGrid(tileIds);

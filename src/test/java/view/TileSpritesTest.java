@@ -1,23 +1,23 @@
 package view;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /** Checks the shipped placeholders and failures while loading tile image resources. */
 class TileSpritesTest {
     @Test
     void loadsSolidOpaqueGreenDirtAndBlueWaterAtThirtyTwoPixels() throws IOException {
-        TileSprites sprites = new TileSprites(Map.of(0, "/tiles/water.png", 1, "/tiles/dirt.png"), 32);
+        TileSprites sprites = new TileSprites(
+                Map.of(0, "/tiles/water.png", 1, "/tiles/dirt.png"), 32);
 
         assertSolidImage(sprites.getImage(0), Color.BLUE);
         assertSolidImage(sprites.getImage(1), Color.GREEN);
@@ -40,7 +40,7 @@ class TileSpritesTest {
     }
 
     @Test
-    void reportsThePathOfAMissingImage() {
+    void reportsPathOfMissingImage() {
         IOException error = assertThrows(IOException.class,
                 () -> new TileSprites(Map.of(0, "/tiles/missing.png"), 32));
 
@@ -49,7 +49,7 @@ class TileSpritesTest {
     }
 
     @Test
-    void rejectsAResourceThatIsNotAnImage() {
+    void rejectsResourceThatIsNotAnImage() {
         IOException error = assertThrows(IOException.class,
                 () -> new TileSprites(Map.of(0, "/maps/level1.txt"), 32));
 
@@ -58,7 +58,7 @@ class TileSpritesTest {
     }
 
     @Test
-    void reportsThePathWhenDecodingACorruptPngFails() {
+    void reportsPathWhenDecodingCorruptPngFails() {
         IOException error = assertThrows(IOException.class,
                 () -> new TileSprites(Map.of(0, "/tiles/corrupt.png"), 32));
 

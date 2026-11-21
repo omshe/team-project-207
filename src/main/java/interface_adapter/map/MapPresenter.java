@@ -7,6 +7,11 @@ import use_case.load_map.LoadMapOutputData;
 public final class MapPresenter implements LoadMapOutputBoundary {
     private final MapViewModel viewModel;
 
+    /**
+     * Connects loading results to the map's display state.
+     *
+     * @param viewModel storage to update and notify when a result arrives
+     */
     public MapPresenter(MapViewModel viewModel) {
         this.viewModel = viewModel;
     }

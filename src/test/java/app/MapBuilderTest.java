@@ -1,33 +1,34 @@
 package app;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
-import org.junit.jupiter.params.provider.ValueSource;
-import view.MapLayer;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import javax.swing.SwingUtilities;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import javax.swing.SwingUtilities;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+import view.MapLayer;
 
 /** Verifies startup preparation and error reporting without opening windows or dialogs. */
 class MapBuilderTest {
-    private static final Map<Integer, String> IMAGES = Map.of(0, "/tiles/water.png", 1, "/tiles/dirt.png");
+    private static final Map<Integer, String> IMAGES = Map.of(
+            0, "/tiles/water.png", 1, "/tiles/dirt.png");
 
     @Test
     void buildsTheProductionMapReadyToDraw() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             List<String> errors = new ArrayList<>();
-            MapLayer layer = new MapBuilder().build("level1.txt", 32, IMAGES, message -> errors.add(message));
+            MapLayer layer = new MapBuilder().build(
+                    "level1.txt", 32, IMAGES, message -> errors.add(message));
 
             assertNotNull(layer);
             assertTrue(errors.isEmpty());
@@ -46,11 +47,14 @@ class MapBuilderTest {
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = {" ", "missing-map.txt", "empty-map.txt", "invalid-map.txt", "uneven-map.txt"})
-    void reportsAMapFailureOnceAndDoesNotBuildALayer(String name) throws Exception {
+    @ValueSource(strings = {
+            " ", "missing-map.txt", "empty-map.txt", "invalid-map.txt", "uneven-map.txt"
+    })
+    void reportsMapFailureOnceAndDoesNotBuildLayer(String name) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             List<String> errors = new ArrayList<>();
-            MapLayer layer = new MapBuilder().build(name, 32, IMAGES, message -> errors.add(message));
+            MapLayer layer = new MapBuilder().build(
+                    name, 32, IMAGES, message -> errors.add(message));
 
             assertNull(layer);
             assertEquals(1, errors.size());
@@ -59,7 +63,7 @@ class MapBuilderTest {
     }
 
     @Test
-    void preservesTheLineAndColumnInAStartupMapError() throws Exception {
+    void preservesLineAndColumnInStartupMapError() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             List<String> errors = new ArrayList<>();
             new MapBuilder().build("invalid-map.txt", 32, IMAGES, message -> errors.add(message));
@@ -72,7 +76,7 @@ class MapBuilderTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"/tiles/missing.png", "/tiles/corrupt.png", "/maps/level1.txt"})
-    void reportsAnImageFailureOnceAndDoesNotBuildALayer(String resource) throws Exception {
+    void reportsImageFailureOnceAndDoesNotBuildLayer(String resource) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             List<String> errors = new ArrayList<>();
             MapLayer layer = new MapBuilder().build("level1.txt", 32,
@@ -88,7 +92,8 @@ class MapBuilderTest {
     void reportsAnIncorrectImageSizeBeforeStartingTheGame() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             List<String> errors = new ArrayList<>();
-            MapLayer layer = new MapBuilder().build("level1.txt", 16, IMAGES, message -> errors.add(message));
+            MapLayer layer = new MapBuilder().build(
+                    "level1.txt", 16, IMAGES, message -> errors.add(message));
 
             assertNull(layer);
             assertEquals(1, errors.size());
@@ -97,7 +102,7 @@ class MapBuilderTest {
     }
 
     @Test
-    void reportsAMissingTerrainImageMappingBeforeStartingTheGame() throws Exception {
+    void reportsMissingTerrainImageMappingBeforeStartingTheGame() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             List<String> errors = new ArrayList<>();
             MapLayer layer = new MapBuilder().build("level1.txt", 32,

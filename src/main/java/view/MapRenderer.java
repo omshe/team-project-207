@@ -1,7 +1,6 @@
 package view;
 
 import interface_adapter.map.MapState;
-
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
@@ -14,6 +13,12 @@ public final class MapRenderer {
     private BufferedImage cachedImage;
     private String errorMessage = "";
 
+    /**
+     * Creates a renderer using already loaded tile images.
+     *
+     * @param sprites source of the read-only images used to draw terrain
+     * @throws IllegalArgumentException if the image source is null
+     */
     public MapRenderer(TileImageSource sprites) {
         if (sprites == null) {
             throw new IllegalArgumentException("Tile sprites must not be null.");
@@ -28,6 +33,7 @@ public final class MapRenderer {
      * A failed render preserves the last complete image and records an explanation.
      *
      * @param state non-null display state containing a validated map or the empty initial state
+     * @return the latest complete image, or null when no complete map is available
      */
     public BufferedImage render(MapState state) {
         if (state == lastState) {
@@ -69,7 +75,8 @@ public final class MapRenderer {
             for (int row = 0; row < state.getRowCount(); row++) {
                 for (int col = 0; col < state.getColumnCount(); col++) {
                     BufferedImage tile = sprites.getImage(state.getTileId(col, row));
-                    graphics.drawImage(tile, col * tileSize, row * tileSize, tileSize, tileSize, null);
+                    graphics.drawImage(
+                            tile, col * tileSize, row * tileSize, tileSize, tileSize, null);
                 }
             }
         } finally {

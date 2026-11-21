@@ -7,7 +7,14 @@ public final class LoadMapInteractor implements LoadMapInputBoundary {
     private final MapDataAccessInterface mapDataAccess;
     private final LoadMapOutputBoundary presenter;
 
-    public LoadMapInteractor(MapDataAccessInterface mapDataAccess, LoadMapOutputBoundary presenter) {
+    /**
+     * Connects map loading to its data source and result boundary.
+     *
+     * @param mapDataAccess source of validated terrain maps
+     * @param presenter recipient of the success or failure result
+     */
+    public LoadMapInteractor(MapDataAccessInterface mapDataAccess,
+                             LoadMapOutputBoundary presenter) {
         this.mapDataAccess = mapDataAccess;
         this.presenter = presenter;
     }

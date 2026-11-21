@@ -5,14 +5,13 @@ import interface_adapter.game.GameController;
 import interface_adapter.game.GamePresenter;
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
+import java.util.Map;
+import javax.swing.SwingUtilities;
 import use_case.update_game.UpdateGameInteractor;
 import view.GamePanel;
 import view.GameWindow;
 import view.KeyboardInput;
 import view.MapLayer;
-
-import javax.swing.SwingUtilities;
-import java.util.Map;
 
 /** Assembles the game, using MapBuilder for map wiring, and starts it on Swing's event thread. */
 public class Main {
@@ -23,6 +22,11 @@ public class Main {
     private static final int TILE_SIZE = 32;
     private static final String STARTING_MAP = "level1.txt";
 
+    /**
+     * Schedules game startup on Swing's event thread.
+     *
+     * @param args command-line arguments, currently unused
+     */
     public static void main(String[] args) {
         // Build the window on Swing's thread (Swing should only be used from that thread).
         SwingUtilities.invokeLater(() -> start());
@@ -38,15 +42,16 @@ public class Main {
         }
 
         // Entities
-        Player player = new Player((SCREEN_WIDTH - PLAYER_SIZE) / 2.0, (SCREEN_HEIGHT - PLAYER_SIZE) / 2.0,
-                PLAYER_SIZE, PLAYER_SPEED);
+        Player player = new Player((SCREEN_WIDTH - PLAYER_SIZE) / 2.0,
+                (SCREEN_HEIGHT - PLAYER_SIZE) / 2.0, PLAYER_SIZE, PLAYER_SPEED);
 
         // Interface adapters + use case
         GameViewModel viewModel = new GameViewModel(
                 new GameState((int) player.getX(), (int) player.getY(), player.getSize()));
         GamePresenter presenter = new GamePresenter(viewModel);
-        UpdateGameInteractor updateGame = new UpdateGameInteractor(player, SCREEN_WIDTH, SCREEN_HEIGHT, presenter);
-        GameController controller = new GameController(updateGame);
+        UpdateGameInteractor updateGame = new UpdateGameInteractor(
+                player, SCREEN_WIDTH, SCREEN_HEIGHT, presenter);
+        final GameController controller = new GameController(updateGame);
 
         // Frameworks: Swing window, input, loop
         KeyboardInput keyboard = new KeyboardInput();

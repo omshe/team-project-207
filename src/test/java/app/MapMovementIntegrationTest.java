@@ -1,25 +1,24 @@
 package app;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import entity.Player;
 import interface_adapter.game.GameController;
 import interface_adapter.game.GamePresenter;
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
-import org.junit.jupiter.api.Test;
-import use_case.update_game.UpdateGameInteractor;
-import view.GamePanel;
-import view.KeyboardInput;
-import view.MapLayer;
-
-import javax.swing.SwingUtilities;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import javax.swing.SwingUtilities;
+import org.junit.jupiter.api.Test;
+import use_case.update_game.UpdateGameInteractor;
+import view.GamePanel;
+import view.KeyboardInput;
+import view.MapLayer;
 
 /** Exercises the existing keyboard-to-player flow with the production map behind the player. */
 class MapMovementIntegrationTest {
@@ -95,7 +94,8 @@ class MapMovementIntegrationTest {
 
     private static BufferedImage paint(GamePanel panel) {
         panel.setSize(panel.getPreferredSize());
-        BufferedImage image = new BufferedImage(panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        BufferedImage image = new BufferedImage(
+                panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = image.createGraphics();
         try {
             panel.paint(graphics);

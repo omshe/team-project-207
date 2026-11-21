@@ -1,12 +1,12 @@
 package entity;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
 
 /** Checks the map's shape, coordinate boundaries, and protection against outside changes. */
 class TileMapTest {
@@ -25,7 +25,7 @@ class TileMapTest {
     }
 
     @Test
-    void acceptsASingleTileMap() {
+    void acceptsSingleTileMap() {
         TileMap map = new TileMap(new TileType[][] {{dirt}}, 32);
 
         assertEquals(32, map.getWidthInPixels());
@@ -91,7 +91,8 @@ class TileMapTest {
         int[][] positions = {{-1, 0}, {0, -1}, {3, 0}, {0, 2}};
 
         for (int[] position : positions) {
-            assertThrows(IndexOutOfBoundsException.class, () -> map.getTile(position[0], position[1]));
+            assertThrows(IndexOutOfBoundsException.class,
+                    () -> map.getTile(position[0], position[1]));
         }
     }
 
@@ -106,7 +107,8 @@ class TileMapTest {
         };
 
         for (double[] position : positions) {
-            assertThrows(IndexOutOfBoundsException.class, () -> map.tileAtPixel(position[0], position[1]));
+            assertThrows(IndexOutOfBoundsException.class,
+                    () -> map.tileAtPixel(position[0], position[1]));
             assertFalse(map.isWalkable(position[0], position[1]));
         }
     }
@@ -124,7 +126,7 @@ class TileMapTest {
     }
 
     @Test
-    void replacingASuppliedRowDoesNotChangeTheMap() {
+    void replacingSuppliedRowDoesNotChangeTheMap() {
         TileType[][] tiles = {{dirt, water}};
         TileMap map = new TileMap(tiles, 32);
 
@@ -144,7 +146,8 @@ class TileMapTest {
 
     @Test
     void rejectsNullRows() {
-        assertThrows(IllegalArgumentException.class, () -> new TileMap(new TileType[][] {null}, 32));
+        assertThrows(IllegalArgumentException.class,
+                () -> new TileMap(new TileType[][] {null}, 32));
         assertThrows(IllegalArgumentException.class,
                 () -> new TileMap(new TileType[][] {{dirt}, null}, 32));
     }

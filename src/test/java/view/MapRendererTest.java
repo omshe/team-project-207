@@ -1,19 +1,18 @@
 package view;
 
-import interface_adapter.map.MapState;
-import org.junit.jupiter.api.Test;
-
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import interface_adapter.map.MapState;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 /** Checks rendered pixels, cache invalidation and failures using images held in memory. */
 class MapRendererTest {
@@ -55,7 +54,8 @@ class MapRendererTest {
     void changesErrorTextWithoutRedrawingUnchangedTerrain() {
         BufferedImage first = renderer.render(new MapState(new int[][] {{1, 0}}, 32, ""));
 
-        assertSame(first, renderer.render(new MapState(new int[][] {{1, 0}}, 32, "Map unavailable.")));
+        assertSame(first,
+                renderer.render(new MapState(new int[][] {{1, 0}}, 32, "Map unavailable.")));
         assertEquals("Map unavailable.", renderer.getErrorMessage());
         assertSame(first, renderer.render(new MapState(new int[][] {{1, 0}}, 32, "")));
         assertEquals("", renderer.getErrorMessage());
@@ -88,7 +88,7 @@ class MapRendererTest {
     }
 
     @Test
-    void redrawsWhenTileSizeChangesWithoutFittingToAWindow() {
+    void redrawsWhenTileSizeChangesWithoutFittingToWindow() {
         BufferedImage first = renderer.render(new MapState(new int[][] {{1, 0}}, 32, ""));
 
         BufferedImage changed = renderer.render(new MapState(new int[][] {{1, 0}}, 16, ""));
@@ -110,8 +110,9 @@ class MapRendererTest {
     }
 
     @Test
-    void canRenderAPreservedMapWhenAttachedAfterALoadingError() {
-        BufferedImage image = renderer.render(new MapState(new int[][] {{1, 0}}, 32, "Map unavailable."));
+    void canRenderPreservedMapWhenAttachedAfterLoadingError() {
+        BufferedImage image = renderer.render(
+                new MapState(new int[][] {{1, 0}}, 32, "Map unavailable."));
 
         assertEquals(64, image.getWidth());
         assertEquals(Color.GREEN.getRGB(), image.getRGB(0, 0));
@@ -137,7 +138,7 @@ class MapRendererTest {
     }
 
     @Test
-    void doesNotExposeAPartialImageWhenTheFirstRenderFails() {
+    void doesNotExposePartialImageWhenTheFirstRenderFails() {
         assertNull(renderer.render(new MapState(new int[][] {{1, 9}}, 32, "")));
         assertTrue(renderer.getErrorMessage().contains("terrain ID: 9"));
 
@@ -165,7 +166,7 @@ class MapRendererTest {
     }
 
     @Test
-    void rejectsAMissingImageSource() {
+    void rejectsMissingImageSource() {
         assertThrows(IllegalArgumentException.class, () -> new MapRenderer(null));
     }
 
@@ -180,7 +181,8 @@ class MapRendererTest {
             lookups++;
             BufferedImage image = images.get(tileId);
             if (image == null) {
-                throw new IllegalArgumentException("No tile image configured for terrain ID: " + tileId);
+                throw new IllegalArgumentException(
+                        "No tile image configured for terrain ID: " + tileId);
             }
             return image;
         }
