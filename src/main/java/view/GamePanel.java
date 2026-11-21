@@ -14,6 +14,7 @@ public class GamePanel extends JPanel {
     private final GameViewModel viewModel;
     private final PlayerSprite playerSprite;
     private final EnemyWaveLayer enemyWaveLayer;
+    private final ProjectileLayer projectileLayer;
 
     /**
      * Creates the panel.
@@ -21,17 +22,21 @@ public class GamePanel extends JPanel {
      * @param viewModel      the player's view model to read when painting
      * @param playerSprite   how to draw the player
      * @param enemyWaveLayer draws the mobs and wave heading
+     * @param projectileLayer draws flight, impact animations, and casting feedback
      * @param width          preferred width, in pixels
      * @param height         preferred height, in pixels
      */
     public GamePanel(GameViewModel viewModel, PlayerSprite playerSprite,
-                     EnemyWaveLayer enemyWaveLayer, int width, int height) {
+                     EnemyWaveLayer enemyWaveLayer, ProjectileLayer projectileLayer,
+                     int width, int height) {
         this.viewModel = viewModel;
         this.playerSprite = playerSprite;
         this.enemyWaveLayer = enemyWaveLayer;
+        this.projectileLayer = projectileLayer;
         // Repaint when the mob view model changes. Swing merges this with GameLoop's own
         // repaint request for the same tick, so the panel is still painted once per frame.
         enemyWaveLayer.whenStateChanges(() -> repaint());
+        projectileLayer.whenStateChanges(() -> repaint());
         setPreferredSize(new Dimension(width, height));
         setBackground(Color.BLACK);
         setDoubleBuffered(true);
@@ -50,5 +55,6 @@ public class GamePanel extends JPanel {
         enemyWaveLayer.paint(g2);   // mobs and wave heading (Generate Mob Waves)
 
         playerSprite.draw(g2, state);
+        projectileLayer.paint(g2, getHeight());
     }
 }
