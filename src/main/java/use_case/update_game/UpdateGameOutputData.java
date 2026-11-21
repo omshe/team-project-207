@@ -8,6 +8,15 @@ public class UpdateGameOutputData {
     private final boolean playerMoving;
     private final boolean playerFacingLeft;
 
+    /**
+     * Creates the result of one tick.
+     *
+     * @param playerX          the player's x (top-left corner), in pixels
+     * @param playerY          the player's y (top-left corner), in pixels
+     * @param playerSize       width and height of the player box, in pixels
+     * @param playerMoving     whether the player was asked to move this tick
+     * @param playerFacingLeft whether the player faces left
+     */
     public UpdateGameOutputData(double playerX, double playerY, int playerSize,
                                 boolean playerMoving, boolean playerFacingLeft) {
         this.playerX = playerX;

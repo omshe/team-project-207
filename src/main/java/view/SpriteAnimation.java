@@ -12,6 +12,8 @@ public class SpriteAnimation {
     private final int ticksPerFrame;
 
     /**
+     * Loads a sheet from the classpath and cuts it into frames.
+     *
      * @param resourcePath  classpath path of the sheet, e.g. "/sprites/wizard/Wizard-Walk.png"
      * @param frameSize     width and height of one frame, in pixels
      * @param ticksPerFrame how many game ticks each frame stays on screen

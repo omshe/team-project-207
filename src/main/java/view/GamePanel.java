@@ -16,6 +16,15 @@ public class GamePanel extends JPanel {
     private final PlayerSprite playerSprite;
     private final EnemyWaveLayer enemyWaveLayer;
 
+    /**
+     * Creates the panel.
+     *
+     * @param viewModel      the player's view model to read when painting
+     * @param playerSprite   how to draw the player
+     * @param enemyWaveLayer draws the mobs and wave heading
+     * @param width          preferred width, in pixels
+     * @param height         preferred height, in pixels
+     */
     public GamePanel(GameViewModel viewModel, PlayerSprite playerSprite, EnemyWaveLayer enemyWaveLayer,
                      int width, int height) {
         this.viewModel = viewModel;

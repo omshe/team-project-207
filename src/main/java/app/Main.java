@@ -39,6 +39,11 @@ public class Main {
     private static final double ENEMY_SPEED = 2;
     private static final double SPAWN_EDGE_MARGIN = 16;
 
+    /**
+     * Starts the game.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         // Build the window on Swing's thread (Swing should only be used from that thread).
         SwingUtilities.invokeLater(() -> start());

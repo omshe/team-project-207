@@ -12,6 +12,11 @@ public class GamePresenter implements UpdateGameOutputBoundary {
     private PlayerAnimation currentAnimation;
     private int animationTick;
 
+    /**
+     * Creates the presenter. The animation and its tick count continue from the view model's current state.
+     *
+     * @param viewModel where each new GameState is written
+     */
     public GamePresenter(GameViewModel viewModel) {
         this.viewModel = viewModel;
         this.currentAnimation = viewModel.getState().getPlayerAnimation();

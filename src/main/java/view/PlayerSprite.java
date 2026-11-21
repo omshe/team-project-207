@@ -20,6 +20,8 @@ public class PlayerSprite {
     private final int feetY;
 
     /**
+     * Creates a sprite from one animation per PlayerAnimation.
+     *
      * @param animations  the animation to play for each PlayerAnimation
      * @param frameSize   width and height of one sheet frame, in sheet pixels
      * @param scale       how many screen pixels each sheet pixel becomes
@@ -43,6 +45,12 @@ public class PlayerSprite {
         return new PlayerSprite(animations, 100, 3, 51.5, 60);
     }
 
+    /**
+     * Draws the player's current frame, centred on the player box with its feet on the box's bottom edge.
+     *
+     * @param g2    where to draw
+     * @param state the snapshot giving the player's box, animation, tick and facing
+     */
     public void draw(Graphics2D g2, GameState state) {
         BufferedImage frame = animations.get(state.getPlayerAnimation()).frameAt(state.getPlayerAnimationTick());
 

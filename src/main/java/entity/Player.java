@@ -13,6 +13,8 @@ public class Player {
     private boolean moving;
 
     /**
+     * Creates a player that starts facing right and not moving.
+     *
      * @param x     starting x position (top-left corner, in pixels)
      * @param y     starting y position (top-left corner, in pixels)
      * @param size  width and height of the player box, in pixels
