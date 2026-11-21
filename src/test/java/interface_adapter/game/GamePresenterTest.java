@@ -1,11 +1,11 @@
 package interface_adapter.game;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import use_case.update_game.UpdateGameOutputData;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Checks that the presenter picks the right animation and counts its ticks. */
 class GamePresenterTest {
@@ -59,7 +59,8 @@ class GamePresenterTest {
 
     @Test
     void continuesTheAnimationAlreadyInTheViewModel() {
-        GameViewModel walking = new GameViewModel(new GameState(0, 0, 48, PlayerAnimation.WALK, false, 10));
+        GameViewModel walking = new GameViewModel(
+                new GameState(0, 0, 48, PlayerAnimation.WALK, false, 10));
         GamePresenter continuing = new GamePresenter(walking);
 
         continuing.present(new UpdateGameOutputData(4, 0, 48, true, false));

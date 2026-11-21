@@ -1,12 +1,15 @@
 package view;
 
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
+import javax.imageio.ImageIO;
 
-/** One looping animation cut from a horizontal sprite sheet of square frames. Picks the frame to show for a tick. */
+/**
+ * One looping animation cut from a horizontal sprite sheet of square frames. Picks the frame to
+ * show for a tick.
+ */
 public class SpriteAnimation {
     private final BufferedImage[] frames;
     private final int ticksPerFrame;
@@ -28,7 +31,10 @@ public class SpriteAnimation {
         this.ticksPerFrame = ticksPerFrame;
     }
 
-    /** The frame to show after the animation has played for the given number of ticks. Loops forever. */
+    /**
+     * The frame to show after the animation has played for the given number of ticks. Loops
+     * forever.
+     */
     public BufferedImage frameAt(int tick) {
         int index = (tick / ticksPerFrame) % frames.length;
         return frames[index];
@@ -37,7 +43,8 @@ public class SpriteAnimation {
     private static BufferedImage load(String resourcePath) {
         URL url = SpriteAnimation.class.getResource(resourcePath);
         if (url == null) {
-            throw new IllegalStateException("Missing sprite sheet on the classpath: " + resourcePath);
+            throw new IllegalStateException(
+                    "Missing sprite sheet on the classpath: " + resourcePath);
         }
         try {
             return ImageIO.read(url);

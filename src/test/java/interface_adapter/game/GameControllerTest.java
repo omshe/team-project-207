@@ -7,7 +7,10 @@ import org.junit.jupiter.api.Test;
 import use_case.update_game.UpdateGameInputBoundary;
 import use_case.update_game.UpdateGameInputData;
 
-/** Checks that the controller turns held keys into the right move direction (no Swing, fake use case). */
+/**
+ * Checks that the controller turns held keys into the right move direction (no Swing, fake use
+ * case).
+ */
 class GameControllerTest {
 
     private static class RecordingUseCase implements UpdateGameInputBoundary {

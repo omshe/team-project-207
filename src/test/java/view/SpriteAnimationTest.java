@@ -7,7 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-/** Checks that an animation holds each frame for its tick count and loops (uses the wizard walk sheet: 8 frames). */
+/**
+ * Checks that an animation holds each frame for its tick count and loops (uses the wizard walk
+ * sheet: 8 frames).
+ */
 class SpriteAnimationTest {
     private static final String WALK = "/sprites/wizard/Wizard-Walk.png";
     private static final int TICKS_PER_FRAME = 6;
@@ -32,7 +35,8 @@ class SpriteAnimationTest {
     @Test
     void missingSheetFailsWithItsPath() {
         IllegalStateException missing = assertThrows(IllegalStateException.class,
-                () -> new SpriteAnimation("/sprites/wizard/does-not-exist.png", 100, TICKS_PER_FRAME));
+                () -> new SpriteAnimation(
+                        "/sprites/wizard/does-not-exist.png", 100, TICKS_PER_FRAME));
 
         assertTrue(missing.getMessage().contains("does-not-exist"));
     }

@@ -11,6 +11,7 @@ import interface_adapter.game.GamePresenter;
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
 import interface_adapter.game.PlayerAnimation;
+import javax.swing.SwingUtilities;
 import use_case.generate_mob_waves.EdgeSpawnPositionStrategy;
 import use_case.generate_mob_waves.GenerateMobWavesInteractor;
 import use_case.generate_mob_waves.MobWaveSettings;
@@ -21,8 +22,6 @@ import view.GameWindow;
 import view.KeyboardInput;
 import view.PlayerSprite;
 import view.SlimeSprite;
-
-import javax.swing.SwingUtilities;
 
 /** Builds every object, connects them, and starts the game. The only class that knows them all. */
 public class Main {
@@ -51,16 +50,17 @@ public class Main {
 
     private static void start() {
         // Entities
-        Player player = new Player((SCREEN_WIDTH - PLAYER_SIZE) / 2.0, (SCREEN_HEIGHT - PLAYER_SIZE) / 2.0,
-                PLAYER_SIZE, PLAYER_SPEED);
+        Player player = new Player((SCREEN_WIDTH - PLAYER_SIZE) / 2.0,
+                (SCREEN_HEIGHT - PLAYER_SIZE) / 2.0, PLAYER_SIZE, PLAYER_SPEED);
 
         // Interface adapters + use case
         GameViewModel viewModel = new GameViewModel(
                 new GameState((int) player.getX(), (int) player.getY(), player.getSize(),
                         PlayerAnimation.IDLE, player.isFacingLeft(), 0));
         GamePresenter presenter = new GamePresenter(viewModel);
-        UpdateGameInteractor updateGame = new UpdateGameInteractor(player, SCREEN_WIDTH, SCREEN_HEIGHT, presenter);
-        GameController controller = new GameController(updateGame);
+        UpdateGameInteractor updateGame = new UpdateGameInteractor(player, SCREEN_WIDTH,
+                SCREEN_HEIGHT, presenter);
+        final GameController controller = new GameController(updateGame);
 
         // Generate Mob Waves: shares the same player object, so enemies chase where it really is.
         EnemyWaveViewModel enemyWaveViewModel = new EnemyWaveViewModel();
@@ -70,7 +70,7 @@ public class Main {
                 new EdgeSpawnPositionStrategy(SPAWN_EDGE_MARGIN),
                 new MobWaveSettings(ENEMIES_PER_WAVE, ENEMY_WIDTH, ENEMY_HEIGHT, ENEMY_SPEED),
                 SCREEN_WIDTH, SCREEN_HEIGHT);
-        EnemyWaveController enemyWaveController = new EnemyWaveController(generateMobWaves);
+        final EnemyWaveController enemyWaveController = new EnemyWaveController(generateMobWaves);
 
         // Frameworks: Swing window, input, loop
         KeyboardInput keyboard = new KeyboardInput();

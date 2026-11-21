@@ -2,7 +2,6 @@ package view;
 
 import interface_adapter.game.GameState;
 import interface_adapter.game.PlayerAnimation;
-
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.EnumMap;
@@ -37,22 +36,29 @@ public class PlayerSprite {
         this.feetY = feetY;
     }
 
-    /** The wizard from the Tiny RPG Character Asset Pack (100x100 frames, body spans x 43..59, feet on row 59). */
+    /**
+     * The wizard from the Tiny RPG Character Asset Pack (100x100 frames, body spans x 43..59,
+     * feet on row 59).
+     */
     public static PlayerSprite wizard() {
         Map<PlayerAnimation, SpriteAnimation> animations = new EnumMap<>(PlayerAnimation.class);
-        animations.put(PlayerAnimation.IDLE, new SpriteAnimation("/sprites/wizard/Wizard-Idle.png", 100, 10));
-        animations.put(PlayerAnimation.WALK, new SpriteAnimation("/sprites/wizard/Wizard-Walk.png", 100, 6));
+        animations.put(PlayerAnimation.IDLE,
+                new SpriteAnimation("/sprites/wizard/Wizard-Idle.png", 100, 10));
+        animations.put(PlayerAnimation.WALK,
+                new SpriteAnimation("/sprites/wizard/Wizard-Walk.png", 100, 6));
         return new PlayerSprite(animations, 100, 3, 51.5, 60);
     }
 
     /**
-     * Draws the player's current frame, centred on the player box with its feet on the box's bottom edge.
+     * Draws the player's current frame, centred on the player box with its feet on the box's
+     * bottom edge.
      *
      * @param g2    where to draw
      * @param state the snapshot giving the player's box, animation, tick and facing
      */
     public void draw(Graphics2D g2, GameState state) {
-        BufferedImage frame = animations.get(state.getPlayerAnimation()).frameAt(state.getPlayerAnimationTick());
+        BufferedImage frame = animations.get(state.getPlayerAnimation())
+                .frameAt(state.getPlayerAnimationTick());
 
         double boxCenterX = state.getPlayerX() + state.getPlayerSize() / 2.0;
         int boxBottom = state.getPlayerY() + state.getPlayerSize();
@@ -62,10 +68,12 @@ public class PlayerSprite {
         if (state.isPlayerFacingLeft()) {
             // Mirror the frame by drawing it with its left and right edges swapped.
             int left = (int) Math.round(boxCenterX - (frameSize - bodyCenterX) * scale);
-            g2.drawImage(frame, left + size, top, left, top + size, 0, 0, frameSize, frameSize, null);
+            g2.drawImage(frame, left + size, top, left, top + size,
+                    0, 0, frameSize, frameSize, null);
         } else {
             int left = (int) Math.round(boxCenterX - bodyCenterX * scale);
-            g2.drawImage(frame, left, top, left + size, top + size, 0, 0, frameSize, frameSize, null);
+            g2.drawImage(frame, left, top, left + size, top + size,
+                    0, 0, frameSize, frameSize, null);
         }
     }
 }

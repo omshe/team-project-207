@@ -5,7 +5,8 @@ import java.awt.event.KeyEvent;
 
 /**
  * Records which movement keys are held (WASD or arrow keys).
- * Runs on Swing's thread; the game loop reads the flags each tick. It never changes the game itself.
+ * Runs on Swing's thread; the game loop reads the flags each tick. It never changes the game
+ * itself.
  */
 public class KeyboardInput extends KeyAdapter {
     private volatile boolean up;

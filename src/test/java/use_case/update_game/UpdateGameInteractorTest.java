@@ -76,7 +76,8 @@ class UpdateGameInteractorTest {
 
     @Test
     void keepsThePlayerInsideTheTopLeftOfTheWorld() {
-        UpdateGameInteractor edge = new UpdateGameInteractor(new Player(0, 0, 48, 4), 960, 640, presenter);
+        UpdateGameInteractor edge = new UpdateGameInteractor(
+                new Player(0, 0, 48, 4), 960, 640, presenter);
 
         edge.execute(new UpdateGameInputData(-1, -1));
 
@@ -86,7 +87,8 @@ class UpdateGameInteractorTest {
 
     @Test
     void keepsThePlayerInsideTheRightOfTheWorld() {
-        UpdateGameInteractor edge = new UpdateGameInteractor(new Player(958, 0, 48, 4), 960, 640, presenter);
+        UpdateGameInteractor edge = new UpdateGameInteractor(
+                new Player(958, 0, 48, 4), 960, 640, presenter);
 
         edge.execute(new UpdateGameInputData(1, -1));
 

@@ -1,7 +1,7 @@
 package interface_adapter.game;
 
-import use_case.update_game.UpdateGameOutputData;
 import use_case.update_game.UpdateGameOutputBoundary;
+import use_case.update_game.UpdateGameOutputData;
 
 /**
  * Turns a tick's result into a new GameState for the view: rounds positions to pixels,
@@ -13,7 +13,8 @@ public class GamePresenter implements UpdateGameOutputBoundary {
     private int animationTick;
 
     /**
-     * Creates the presenter. The animation and its tick count continue from the view model's current state.
+     * Creates the presenter. The animation and its tick count continue from the view model's
+     * current state.
      *
      * @param viewModel where each new GameState is written
      */
@@ -33,7 +34,8 @@ public class GamePresenter implements UpdateGameOutputBoundary {
         if (animation == currentAnimation) {
             animationTick++;
         } else {
-            currentAnimation = animation;   // restart from the first frame when the animation changes
+            // restart from the first frame when the animation changes
+            currentAnimation = animation;
             animationTick = 0;
         }
 

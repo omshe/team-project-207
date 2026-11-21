@@ -17,10 +17,11 @@ public class GameState {
      * @param playerSize          width and height of the player box, in pixels
      * @param playerAnimation     which animation to play
      * @param playerFacingLeft    whether to draw the player mirrored
-     * @param playerAnimationTick how many ticks the current animation has been playing (0 on its first tick)
+     * @param playerAnimationTick how many ticks the current animation has been playing (0 on its
+     *                            first tick)
      */
-    public GameState(int playerX, int playerY, int playerSize,
-                     PlayerAnimation playerAnimation, boolean playerFacingLeft, int playerAnimationTick) {
+    public GameState(int playerX, int playerY, int playerSize, PlayerAnimation playerAnimation,
+                     boolean playerFacingLeft, int playerAnimationTick) {
         this.playerX = playerX;
         this.playerY = playerY;
         this.playerSize = playerSize;

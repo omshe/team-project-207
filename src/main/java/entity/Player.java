@@ -5,8 +5,8 @@ package entity;
  * Knows nothing about Swing, threads or the screen.
  */
 public class Player {
-    private double x;
-    private double y;
+    private double positionX;
+    private double positionY;
     private final int size;
     private final double speed;
     private boolean facingLeft;
@@ -21,8 +21,8 @@ public class Player {
      * @param speed distance moved per tick, in pixels
      */
     public Player(double x, double y, int size, double speed) {
-        this.x = x;
-        this.y = y;
+        this.positionX = x;
+        this.positionY = y;
         this.size = size;
         this.speed = speed;
     }
@@ -30,7 +30,8 @@ public class Player {
     /**
      * Moves the player one tick in the given direction.
      * dx and dy are -1, 0 or 1. Diagonal movement is normalized so it is not faster.
-     * Moving sideways turns the player to face that way; moving straight up or down keeps the old facing.
+     * Moving sideways turns the player to face that way; moving straight up or down keeps the old
+     * facing.
      */
     public void move(int dx, int dy) {
         moving = dx != 0 || dy != 0;
@@ -44,22 +45,22 @@ public class Player {
             facingLeft = false;
         }
         double length = Math.sqrt(dx * dx + dy * dy);
-        x += dx / length * speed;
-        y += dy / length * speed;
+        positionX += dx / length * speed;
+        positionY += dy / length * speed;
     }
 
     /** Keeps the player inside a world of the given size. */
     public void clampTo(int worldWidth, int worldHeight) {
-        x = Math.max(0, Math.min(x, worldWidth - size));
-        y = Math.max(0, Math.min(y, worldHeight - size));
+        positionX = Math.max(0, Math.min(positionX, worldWidth - size));
+        positionY = Math.max(0, Math.min(positionY, worldHeight - size));
     }
 
     public double getX() {
-        return x;
+        return positionX;
     }
 
     public double getY() {
-        return y;
+        return positionY;
     }
 
     public int getSize() {
