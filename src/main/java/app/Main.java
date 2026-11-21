@@ -15,6 +15,7 @@ import interface_adapter.game.GameController;
 import interface_adapter.game.GamePresenter;
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
+import interface_adapter.game.PlayerAnimation;
 import java.util.Map;
 import javax.swing.SwingUtilities;
 import use_case.cast_spell.CastSpellInteractor;
@@ -29,6 +30,7 @@ import view.GamePanel;
 import view.GameWindow;
 import view.KeyboardInput;
 import view.MouseCastInput;
+import view.PlayerSprite;
 import view.ProjectileLayer;
 import view.SlimeSprite;
 
@@ -52,6 +54,11 @@ public class Main {
     private static final double PROJECTILE_WIDTH = 24;
     private static final double PROJECTILE_HEIGHT = 16;
 
+    /**
+     * Starts the game.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         // Build the window on Swing's thread (Swing should only be used from that thread).
         SwingUtilities.invokeLater(() -> start());
@@ -59,15 +66,17 @@ public class Main {
 
     private static void start() {
         // Entities
-        Player player = new Player((SCREEN_WIDTH - PLAYER_SIZE) / 2.0, (SCREEN_HEIGHT - PLAYER_SIZE) / 2.0,
-                PLAYER_SIZE, PLAYER_SPEED);
+        Player player = new Player((SCREEN_WIDTH - PLAYER_SIZE) / 2.0,
+                (SCREEN_HEIGHT - PLAYER_SIZE) / 2.0, PLAYER_SIZE, PLAYER_SPEED);
         EnemyWave enemyWave = new EnemyWave();
 
         // Interface adapters + use case
         GameViewModel viewModel = new GameViewModel(
-                new GameState((int) player.getX(), (int) player.getY(), player.getSize()));
+                new GameState((int) player.getX(), (int) player.getY(), player.getSize(),
+                        PlayerAnimation.IDLE, player.isFacingLeft(), 0));
         GamePresenter presenter = new GamePresenter(viewModel);
-        UpdateGameInteractor updateGame = new UpdateGameInteractor(player, SCREEN_WIDTH, SCREEN_HEIGHT, presenter);
+        UpdateGameInteractor updateGame = new UpdateGameInteractor(player, SCREEN_WIDTH,
+                SCREEN_HEIGHT, presenter);
         final GameController controller = new GameController(updateGame);
 
         // Generate Mob Waves: shares the same player object, so enemies chase where it really is.
@@ -98,8 +107,8 @@ public class Main {
         EnemyWaveLayer enemyWaveLayer = new EnemyWaveLayer(enemyWaveViewModel, new SlimeSprite());
         ProjectileLayer projectileLayer = new ProjectileLayer(castSpellViewModel,
                 Map.of(fireball.getId(), new FireballSprite()));
-        GamePanel panel = new GamePanel(
-                viewModel, enemyWaveLayer, projectileLayer, SCREEN_WIDTH, SCREEN_HEIGHT);
+        GamePanel panel = new GamePanel(viewModel, PlayerSprite.wizard(), enemyWaveLayer,
+                projectileLayer, SCREEN_WIDTH, SCREEN_HEIGHT);
         panel.addKeyListener(keyboard);
         panel.addMouseListener(new MouseCastInput(castSpellController, fireball.getId()));
 

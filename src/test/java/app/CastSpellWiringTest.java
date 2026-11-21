@@ -21,6 +21,7 @@ import interface_adapter.game.GameController;
 import interface_adapter.game.GamePresenter;
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
+import interface_adapter.game.PlayerAnimation;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -46,7 +47,8 @@ class CastSpellWiringTest {
     private final CastSpellViewModel castViewModel = new CastSpellViewModel();
     private final EnemyWaveViewModel enemyViewModel = new EnemyWaveViewModel();
     private final GameViewModel gameViewModel =
-            new GameViewModel(new GameState(456, 296, 48));
+            new GameViewModel(new GameState(456, 296, 48,
+                    PlayerAnimation.IDLE, player.isFacingLeft(), 0));
     private final InMemoryCastSpellDataAccessObject storage =
             new InMemoryCastSpellDataAccessObject(player, wave);
     private final KeyboardInput keyboard = new KeyboardInput();

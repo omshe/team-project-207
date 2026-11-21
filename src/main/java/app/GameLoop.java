@@ -22,6 +22,15 @@ public class GameLoop implements Runnable {
     private volatile boolean running;
     private Thread thread;
 
+    /**
+     * Creates the loop. It does not run until {@link #start()} is called.
+     *
+     * @param controller          the player's controller, ticked first
+     * @param enemyWaveController the mob-wave controller, ticked after the player
+     * @param castSpellController launches casts and updates projectiles after enemies
+     * @param keyboard            where the held keys are read from each tick
+     * @param screen              the panel to repaint after each tick
+     */
     public GameLoop(GameController controller, EnemyWaveController enemyWaveController,
                     CastSpellController castSpellController,
                     KeyboardInput keyboard, JPanel screen) {
@@ -32,6 +41,7 @@ public class GameLoop implements Runnable {
         this.screen = screen;
     }
 
+    /** Starts the loop on a new daemon thread. Does nothing if it is already running. */
     public void start() {
         if (running) {
             return;
@@ -42,6 +52,7 @@ public class GameLoop implements Runnable {
         thread.start();
     }
 
+    /** Asks the loop to stop; it finishes its current pass and then ends. */
     public void stop() {
         running = false;
     }

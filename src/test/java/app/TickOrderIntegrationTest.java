@@ -14,6 +14,7 @@ import interface_adapter.game.GameController;
 import interface_adapter.game.GamePresenter;
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
+import interface_adapter.game.PlayerAnimation;
 import org.junit.jupiter.api.Test;
 import use_case.generate_mob_waves.EdgeSpawnPositionStrategy;
 import use_case.generate_mob_waves.GenerateMobWavesInteractor;
@@ -26,7 +27,8 @@ import use_case.update_game.UpdateGameInteractor;
  */
 class TickOrderIntegrationTest {
     private final Player player = new Player(456, 296, 48, 4);
-    private final GameViewModel gameViewModel = new GameViewModel(new GameState(456, 296, 48));
+    private final GameViewModel gameViewModel = new GameViewModel(
+            new GameState(456, 296, 48, PlayerAnimation.IDLE, false, 0));
     private final EnemyWaveViewModel enemyWaveViewModel = new EnemyWaveViewModel();
     private final GameController gameController = new GameController(
             new UpdateGameInteractor(player, 960, 640, new GamePresenter(gameViewModel)));
