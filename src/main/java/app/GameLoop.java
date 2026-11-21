@@ -2,6 +2,7 @@ package app;
 
 import interface_adapter.enemy_wave.EnemyWaveController;
 import interface_adapter.game.GameController;
+import interface_adapter.cast_spell.CastSpellController;
 import view.KeyboardInput;
 
 import javax.swing.JPanel;
@@ -16,15 +17,18 @@ public class GameLoop implements Runnable {
 
     private final GameController controller;
     private final EnemyWaveController enemyWaveController;
+    private final CastSpellController castSpellController;
     private final KeyboardInput keyboard;
     private final JPanel screen;
     private volatile boolean running;
     private Thread thread;
 
     public GameLoop(GameController controller, EnemyWaveController enemyWaveController,
+                    CastSpellController castSpellController,
                     KeyboardInput keyboard, JPanel screen) {
         this.controller = controller;
         this.enemyWaveController = enemyWaveController;
+        this.castSpellController = castSpellController;
         this.keyboard = keyboard;
         this.screen = screen;
     }
@@ -55,16 +59,7 @@ public class GameLoop implements Runnable {
             last = now;
 
             if (pendingTicks >= 1) {
-                // 1. input: read the keys once so every controller sees the same input this tick
-                boolean up = keyboard.isUp();
-                boolean down = keyboard.isDown();
-                boolean left = keyboard.isLeft();
-                boolean right = keyboard.isRight();
-                // 2. update: the player moves first, then the mobs chase the player's new position
-                controller.tick(up, down, left, right);
-                enemyWaveController.tick(up, down, left, right);
-                // 3. render: Swing calls GamePanel.paintComponent on its own thread
-                screen.repaint();
+                tick();
                 pendingTicks--;
             }
 
@@ -75,5 +70,20 @@ public class GameLoop implements Runnable {
                 return;
             }
         }
+    }
+
+    /** Runs one scheduled tick on the game-loop thread; also used by integration tests. */
+    void tick() {
+        // 1. input: read the keys once so every controller sees the same input this tick
+        boolean up = keyboard.isUp();
+        boolean down = keyboard.isDown();
+        boolean left = keyboard.isLeft();
+        boolean right = keyboard.isRight();
+        // 2. update: the player moves first, then the mobs chase the player's new position
+        controller.tick(up, down, left, right);
+        enemyWaveController.tick(up, down, left, right);
+        castSpellController.tick();
+        // 3. render: Swing calls GamePanel.paintComponent on its own thread
+        screen.repaint();
     }
 }

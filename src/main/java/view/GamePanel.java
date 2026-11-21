@@ -13,14 +13,18 @@ import java.awt.Graphics2D;
 public class GamePanel extends JPanel {
     private final GameViewModel viewModel;
     private final EnemyWaveLayer enemyWaveLayer;
+    private final ProjectileLayer projectileLayer;
 
     public GamePanel(GameViewModel viewModel, EnemyWaveLayer enemyWaveLayer,
+                     ProjectileLayer projectileLayer,
                      int width, int height) {
         this.viewModel = viewModel;
         this.enemyWaveLayer = enemyWaveLayer;
+        this.projectileLayer = projectileLayer;
         // Repaint when the mob view model changes. Swing merges this with GameLoop's own
         // repaint request for the same tick, so the panel is still painted once per frame.
         enemyWaveLayer.whenStateChanges(() -> repaint());
+        projectileLayer.whenStateChanges(() -> repaint());
         setPreferredSize(new Dimension(width, height));
         setBackground(Color.BLACK);
         setDoubleBuffered(true);
@@ -37,5 +41,6 @@ public class GamePanel extends JPanel {
 
         g2.setColor(Color.WHITE);
         g2.fillRect(state.getPlayerX(), state.getPlayerY(), state.getPlayerSize(), state.getPlayerSize());
+        projectileLayer.paint(g2, getHeight());
     }
 }
