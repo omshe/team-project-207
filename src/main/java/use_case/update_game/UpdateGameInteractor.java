@@ -25,6 +25,7 @@ public class UpdateGameInteractor implements UpdateGameInputBoundary {
         player.move(inputData.getMoveX(), inputData.getMoveY());
         player.clampTo(worldWidth, worldHeight);
 
-        presenter.present(new UpdateGameOutputData(player.getX(), player.getY(), player.getSize()));
+        presenter.present(new UpdateGameOutputData(player.getX(), player.getY(), player.getSize(),
+                player.isMoving(), player.isFacingLeft()));
     }
 }

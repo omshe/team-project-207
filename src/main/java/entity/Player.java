@@ -1,7 +1,7 @@
 package entity;
 
 /**
- * The player character. Holds only data and rules (position, size, speed).
+ * The player character. Holds only data and rules (position, size, speed, facing).
  * Knows nothing about Swing, threads or the screen.
  */
 public class Player {
@@ -9,6 +9,8 @@ public class Player {
     private double y;
     private final int size;
     private final double speed;
+    private boolean facingLeft;
+    private boolean moving;
 
     /**
      * @param x     starting x position (top-left corner, in pixels)
@@ -26,10 +28,18 @@ public class Player {
     /**
      * Moves the player one tick in the given direction.
      * dx and dy are -1, 0 or 1. Diagonal movement is normalized so it is not faster.
+     * Moving sideways turns the player to face that way; moving straight up or down keeps the old facing.
      */
     public void move(int dx, int dy) {
-        if (dx == 0 && dy == 0) {
+        moving = dx != 0 || dy != 0;
+        if (!moving) {
             return;
+        }
+        if (dx < 0) {
+            facingLeft = true;
+        }
+        if (dx > 0) {
+            facingLeft = false;
         }
         double length = Math.sqrt(dx * dx + dy * dy);
         x += dx / length * speed;
@@ -52,5 +62,15 @@ public class Player {
 
     public int getSize() {
         return size;
+    }
+
+    /** True if the player last turned left; players start facing right. */
+    public boolean isFacingLeft() {
+        return facingLeft;
+    }
+
+    /** True if the player was asked to move on the most recent tick. */
+    public boolean isMoving() {
+        return moving;
     }
 }

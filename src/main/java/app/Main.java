@@ -10,6 +10,7 @@ import interface_adapter.game.GameController;
 import interface_adapter.game.GamePresenter;
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
+import interface_adapter.game.PlayerAnimation;
 import use_case.generate_mob_waves.EdgeSpawnPositionStrategy;
 import use_case.generate_mob_waves.GenerateMobWavesInteractor;
 import use_case.generate_mob_waves.MobWaveSettings;
@@ -18,6 +19,7 @@ import view.EnemyWaveLayer;
 import view.GamePanel;
 import view.GameWindow;
 import view.KeyboardInput;
+import view.PlayerSprite;
 import view.SlimeSprite;
 
 import javax.swing.SwingUtilities;
@@ -49,7 +51,8 @@ public class Main {
 
         // Interface adapters + use case
         GameViewModel viewModel = new GameViewModel(
-                new GameState((int) player.getX(), (int) player.getY(), player.getSize()));
+                new GameState((int) player.getX(), (int) player.getY(), player.getSize(),
+                        PlayerAnimation.IDLE, player.isFacingLeft(), 0));
         GamePresenter presenter = new GamePresenter(viewModel);
         UpdateGameInteractor updateGame = new UpdateGameInteractor(player, SCREEN_WIDTH, SCREEN_HEIGHT, presenter);
         GameController controller = new GameController(updateGame);
@@ -67,7 +70,8 @@ public class Main {
         // Frameworks: Swing window, input, loop
         KeyboardInput keyboard = new KeyboardInput();
         EnemyWaveLayer enemyWaveLayer = new EnemyWaveLayer(enemyWaveViewModel, new SlimeSprite());
-        GamePanel panel = new GamePanel(viewModel, enemyWaveLayer, SCREEN_WIDTH, SCREEN_HEIGHT);
+        GamePanel panel = new GamePanel(viewModel, PlayerSprite.wizard(), enemyWaveLayer,
+                SCREEN_WIDTH, SCREEN_HEIGHT);
         panel.addKeyListener(keyboard);
 
         GameWindow window = new GameWindow(panel);

@@ -5,11 +5,16 @@ public class UpdateGameOutputData {
     private final double playerX;
     private final double playerY;
     private final int playerSize;
+    private final boolean playerMoving;
+    private final boolean playerFacingLeft;
 
-    public UpdateGameOutputData(double playerX, double playerY, int playerSize) {
+    public UpdateGameOutputData(double playerX, double playerY, int playerSize,
+                                boolean playerMoving, boolean playerFacingLeft) {
         this.playerX = playerX;
         this.playerY = playerY;
         this.playerSize = playerSize;
+        this.playerMoving = playerMoving;
+        this.playerFacingLeft = playerFacingLeft;
     }
 
     public double getPlayerX() {
@@ -22,5 +27,13 @@ public class UpdateGameOutputData {
 
     public int getPlayerSize() {
         return playerSize;
+    }
+
+    public boolean isPlayerMoving() {
+        return playerMoving;
+    }
+
+    public boolean isPlayerFacingLeft() {
+        return playerFacingLeft;
     }
 }

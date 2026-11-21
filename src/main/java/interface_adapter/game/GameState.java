@@ -5,11 +5,21 @@ public class GameState {
     private final int playerX;
     private final int playerY;
     private final int playerSize;
+    private final PlayerAnimation playerAnimation;
+    private final boolean playerFacingLeft;
+    private final int playerAnimationTick;
 
-    public GameState(int playerX, int playerY, int playerSize) {
+    /**
+     * @param playerAnimationTick how many ticks the current animation has been playing (0 on its first tick)
+     */
+    public GameState(int playerX, int playerY, int playerSize,
+                     PlayerAnimation playerAnimation, boolean playerFacingLeft, int playerAnimationTick) {
         this.playerX = playerX;
         this.playerY = playerY;
         this.playerSize = playerSize;
+        this.playerAnimation = playerAnimation;
+        this.playerFacingLeft = playerFacingLeft;
+        this.playerAnimationTick = playerAnimationTick;
     }
 
     public int getPlayerX() {
@@ -22,5 +32,17 @@ public class GameState {
 
     public int getPlayerSize() {
         return playerSize;
+    }
+
+    public PlayerAnimation getPlayerAnimation() {
+        return playerAnimation;
+    }
+
+    public boolean isPlayerFacingLeft() {
+        return playerFacingLeft;
+    }
+
+    public int getPlayerAnimationTick() {
+        return playerAnimationTick;
     }
 }
