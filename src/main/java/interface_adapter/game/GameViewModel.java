@@ -8,6 +8,11 @@ package interface_adapter.game;
 public class GameViewModel {
     private volatile GameState state;
 
+    /**
+     * Creates the view model.
+     *
+     * @param initialState what the view shows before the first tick
+     */
     public GameViewModel(GameState initialState) {
         this.state = initialState;
     }

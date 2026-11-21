@@ -5,6 +5,12 @@ public class UpdateGameInputData {
     private final int moveX;
     private final int moveY;
 
+    /**
+     * Creates the input for one tick.
+     *
+     * @param moveX -1 for left, 1 for right, 0 for no horizontal movement
+     * @param moveY -1 for up, 1 for down, 0 for no vertical movement
+     */
     public UpdateGameInputData(int moveX, int moveY) {
         this.moveX = moveX;
         this.moveY = moveY;

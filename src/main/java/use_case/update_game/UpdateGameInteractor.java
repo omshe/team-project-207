@@ -12,6 +12,14 @@ public class UpdateGameInteractor implements UpdateGameInputBoundary {
     private final int worldHeight;
     private final UpdateGameOutputBoundary presenter;
 
+    /**
+     * Creates the interactor.
+     *
+     * @param player      the player to move each tick
+     * @param worldWidth  width of the world the player must stay inside, in pixels
+     * @param worldHeight height of the world the player must stay inside, in pixels
+     * @param presenter   receives the result of every tick
+     */
     public UpdateGameInteractor(Player player, int worldWidth, int worldHeight,
                                 UpdateGameOutputBoundary presenter) {
         this.player = player;
@@ -25,6 +33,7 @@ public class UpdateGameInteractor implements UpdateGameInputBoundary {
         player.move(inputData.getMoveX(), inputData.getMoveY());
         player.clampTo(worldWidth, worldHeight);
 
-        presenter.present(new UpdateGameOutputData(player.getX(), player.getY(), player.getSize()));
+        presenter.present(new UpdateGameOutputData(player.getX(), player.getY(), player.getSize(),
+                player.isMoving(), player.isFacingLeft()));
     }
 }
