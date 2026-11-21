@@ -25,22 +25,22 @@ public final class CastSpellState {
         this.projectiles = List.copyOf(projectiles);
     }
 
-    /** @return the snapshot shown before casting or simulation has run */
+    /** Returns the snapshot shown before casting or simulation has run. */
     public static CastSpellState empty() {
         return new CastSpellState(0, "", List.of());
     }
 
-    /** @return the completed simulation tick used for flight animation */
+    /** Returns the completed simulation tick used for flight animation. */
     public long getAnimationTick() {
         return animationTick;
     }
 
-    /** @return feedback for the player, or an empty string */
+    /** Returns feedback for the player, or an empty string. */
     public String getStatusMessage() {
         return statusMessage;
     }
 
-    /** @return an unmodifiable list of immutable projectile display values */
+    /** Returns an unmodifiable list of immutable projectile display values. */
     public List<ProjectileDisplayData> getProjectiles() {
         return projectiles;
     }

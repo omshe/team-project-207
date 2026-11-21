@@ -1,5 +1,11 @@
 package data_access;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import entity.Enemy;
 import entity.EnemyWave;
 import entity.FireballSpell;
@@ -9,12 +15,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import use_case.cast_spell.CastSpellDataAccessInterface;
 import use_case.cast_spell.UpdateProjectilesDataAccessInterface;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests shared session objects, projectile storage, removal, and snapshots.

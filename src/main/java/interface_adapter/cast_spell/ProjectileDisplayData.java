@@ -31,32 +31,32 @@ public final class ProjectileDisplayData {
         this.angleRadians = angleRadians;
     }
 
-    /** @return the spell identifier */
+    /** Returns the spell identifier. */
     public String getSpellId() {
         return spellId;
     }
 
-    /** @return horizontal hitbox center in world pixels */
+    /** Returns the horizontal hitbox center in world pixels. */
     public double getCenterX() {
         return centerX;
     }
 
-    /** @return vertical hitbox center in world pixels */
+    /** Returns the vertical hitbox center in world pixels. */
     public double getCenterY() {
         return centerY;
     }
 
-    /** @return hitbox width in pixels */
+    /** Returns the hitbox width in pixels. */
     public double getWidth() {
         return width;
     }
 
-    /** @return hitbox height in pixels */
+    /** Returns the hitbox height in pixels. */
     public double getHeight() {
         return height;
     }
 
-    /** @return rotation in radians from the rightward direction */
+    /** Returns the rotation in radians from the rightward direction. */
     public double getAngleRadians() {
         return angleRadians;
     }

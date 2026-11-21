@@ -13,15 +13,15 @@ public final class Projectile {
     private final double width;
     private final double height;
 
-    private double x;
-    private double y;
+    private double positionX;
+    private double positionY;
 
     /**
      * Creates a projectile at the given top-left position.
      *
      * @param spell the spell represented by this projectile
-     * @param x the initial left edge in world pixels
-     * @param y the initial top edge in world pixels
+     * @param positionX the initial left edge in world pixels
+     * @param positionY the initial top edge in world pixels
      * @param velocityX horizontal movement in pixels per tick
      * @param velocityY vertical movement in pixels per tick
      * @param width the positive, finite hitbox width in pixels
@@ -30,12 +30,12 @@ public final class Projectile {
      * @throws IllegalArgumentException if position or velocity is not finite,
      *                                  or either dimension is not positive and finite
      */
-    public Projectile(Spell spell, double x, double y,
+    public Projectile(Spell spell, double positionX, double positionY,
                       double velocityX, double velocityY,
                       double width, double height) {
         this.spell = Objects.requireNonNull(spell, "Spell must not be null");
 
-        if (!Double.isFinite(x) || !Double.isFinite(y)) {
+        if (!Double.isFinite(positionX) || !Double.isFinite(positionY)) {
             throw new IllegalArgumentException("Position must be finite");
         }
         if (!Double.isFinite(velocityX) || !Double.isFinite(velocityY)) {
@@ -47,8 +47,8 @@ public final class Projectile {
                     "Projectile dimensions must be positive and finite");
         }
 
-        this.x = x;
-        this.y = y;
+        this.positionX = positionX;
+        this.positionY = positionY;
         this.velocityX = velocityX;
         this.velocityY = velocityY;
         this.width = width;
@@ -59,8 +59,8 @@ public final class Projectile {
      * Advances the projectile by its fixed velocity for one game tick.
      */
     public void move() {
-        x += velocityX;
-        y += velocityY;
+        positionX += velocityX;
+        positionY += velocityY;
     }
 
     /**
@@ -78,7 +78,7 @@ public final class Projectile {
      * @return the horizontal position in world pixels
      */
     public double getX() {
-        return x;
+        return positionX;
     }
 
     /**
@@ -87,7 +87,7 @@ public final class Projectile {
      * @return the vertical position in world pixels
      */
     public double getY() {
-        return y;
+        return positionY;
     }
 
     /**
@@ -96,6 +96,6 @@ public final class Projectile {
      * @return a new immutable hitbox with this projectile's position and dimensions
      */
     public Hitbox getHitbox() {
-        return new Hitbox(x, y, width, height);
+        return new Hitbox(positionX, positionY, width, height);
     }
 }

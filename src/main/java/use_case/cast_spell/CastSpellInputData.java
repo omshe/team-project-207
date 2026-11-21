@@ -21,17 +21,17 @@ public final class CastSpellInputData {
         this.targetWorldY = targetWorldY;
     }
 
-    /** @return the requested spell identifier */
+    /** Returns the requested spell identifier. */
     public String getSpellId() {
         return spellId;
     }
 
-    /** @return the fixed horizontal aim coordinate in world pixels */
+    /** Returns the fixed horizontal aim coordinate in world pixels. */
     public double getTargetWorldX() {
         return targetWorldX;
     }
 
-    /** @return the fixed vertical aim coordinate in world pixels */
+    /** Returns the fixed vertical aim coordinate in world pixels. */
     public double getTargetWorldY() {
         return targetWorldY;
     }

@@ -18,12 +18,12 @@ public final class CastSpellOutputData {
         this.spellName = spellName;
     }
 
-    /** @return the launched spell's identifier */
+    /** Returns the launched spell's identifier. */
     public String getSpellId() {
         return spellId;
     }
 
-    /** @return the launched spell's display name */
+    /** Returns the launched spell's display name. */
     public String getSpellName() {
         return spellName;
     }

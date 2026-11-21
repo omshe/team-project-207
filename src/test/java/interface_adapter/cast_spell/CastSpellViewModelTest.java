@@ -94,10 +94,10 @@ class CastSpellViewModelTest {
         List<PropertyChangeEvent> events = new ArrayList<>();
         PropertyChangeListener listener = event -> events.add(event);
         viewModel.addPropertyChangeListener(listener);
-        CastSpellState before = viewModel.getState();
+        final CastSpellState before = viewModel.getState();
 
         viewModel.setStatusMessage("Message");
-        CastSpellState after = viewModel.getState();
+        final CastSpellState after = viewModel.getState();
         viewModel.drainImpacts();
 
         assertEquals(1, events.size());
@@ -116,7 +116,7 @@ class CastSpellViewModelTest {
         ProjectileImpactDisplayData impact =
                 new ProjectileImpactDisplayData("fireball", 30, 40);
         viewModel.updateProjectiles(1, List.of(), List.of(impact));
-        CastSpellState before = viewModel.getState();
+        final CastSpellState before = viewModel.getState();
 
         assertThrows(NullPointerException.class, () -> viewModel.setStatusMessage(null));
         assertThrows(NullPointerException.class,

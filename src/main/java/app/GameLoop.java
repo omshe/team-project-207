@@ -1,11 +1,10 @@
 package app;
 
+import interface_adapter.cast_spell.CastSpellController;
 import interface_adapter.enemy_wave.EnemyWaveController;
 import interface_adapter.game.GameController;
-import interface_adapter.cast_spell.CastSpellController;
-import view.KeyboardInput;
-
 import javax.swing.JPanel;
+import view.KeyboardInput;
 
 /**
  * Runs the game at a fixed 60 ticks per second on its own thread.

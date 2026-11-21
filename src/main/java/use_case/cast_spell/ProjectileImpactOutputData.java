@@ -5,34 +5,34 @@ package use_case.cast_spell;
  */
 public final class ProjectileImpactOutputData {
     private final String spellId;
-    private final double x;
-    private final double y;
+    private final double positionX;
+    private final double positionY;
 
     /**
      * Creates an impact event for visual playback.
      *
      * @param spellId the spell whose projectile hit an enemy
-     * @param x the projectile centre's horizontal world coordinate at contact
-     * @param y the projectile centre's vertical world coordinate at contact
+     * @param positionX the projectile centre's horizontal world coordinate at contact
+     * @param positionY the projectile centre's vertical world coordinate at contact
      */
-    public ProjectileImpactOutputData(String spellId, double x, double y) {
+    public ProjectileImpactOutputData(String spellId, double positionX, double positionY) {
         this.spellId = spellId;
-        this.x = x;
-        this.y = y;
+        this.positionX = positionX;
+        this.positionY = positionY;
     }
 
-    /** @return the impacting spell's identifier */
+    /** Returns the impacting spell's identifier. */
     public String getSpellId() {
         return spellId;
     }
 
-    /** @return the impact centre's horizontal world coordinate */
+    /** Returns the impact centre's horizontal world coordinate. */
     public double getX() {
-        return x;
+        return positionX;
     }
 
-    /** @return the impact centre's vertical world coordinate */
+    /** Returns the impact centre's vertical world coordinate. */
     public double getY() {
-        return y;
+        return positionY;
     }
 }

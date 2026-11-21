@@ -104,7 +104,7 @@ class CastSpellPresenterTest {
     void simulationNotifiesOnceWithThePublishedSnapshot() {
         List<PropertyChangeEvent> events = new ArrayList<>();
         viewModel.addPropertyChangeListener(event -> events.add(event));
-        CastSpellState before = viewModel.getState();
+        final CastSpellState before = viewModel.getState();
 
         presenter.present(new UpdateProjectilesOutputData(1, List.of(), List.of()));
 

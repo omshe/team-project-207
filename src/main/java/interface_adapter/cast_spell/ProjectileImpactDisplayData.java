@@ -22,17 +22,17 @@ public final class ProjectileImpactDisplayData {
         this.centerY = centerY;
     }
 
-    /** @return the impacting spell's identifier */
+    /** Returns the impacting spell's identifier. */
     public String getSpellId() {
         return spellId;
     }
 
-    /** @return horizontal impact center in world pixels */
+    /** Returns the horizontal impact center in world pixels. */
     public double getCenterX() {
         return centerX;
     }
 
-    /** @return vertical impact center in world pixels */
+    /** Returns the vertical impact center in world pixels. */
     public double getCenterY() {
         return centerY;
     }

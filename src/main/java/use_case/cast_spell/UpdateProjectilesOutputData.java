@@ -26,17 +26,17 @@ public final class UpdateProjectilesOutputData {
         this.impacts = List.copyOf(impacts);
     }
 
-    /** @return the completed tick number */
+    /** Returns the completed tick number. */
     public long getTick() {
         return tick;
     }
 
-    /** @return unmodifiable snapshots of the surviving projectiles */
+    /** Returns unmodifiable snapshots of the surviving projectiles. */
     public List<ProjectileOutputData> getProjectiles() {
         return projectiles;
     }
 
-    /** @return unmodifiable impact events generated during this tick only */
+    /** Returns the unmodifiable impact events generated during this tick only. */
     public List<ProjectileImpactOutputData> getImpacts() {
         return impacts;
     }

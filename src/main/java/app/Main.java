@@ -1,10 +1,13 @@
 package app;
 
-import data_access.InMemoryEnemyWaveDataAccessObject;
 import data_access.InMemoryCastSpellDataAccessObject;
+import data_access.InMemoryEnemyWaveDataAccessObject;
 import entity.EnemyWave;
-import entity.Player;
 import entity.FireballSpell;
+import entity.Player;
+import interface_adapter.cast_spell.CastSpellController;
+import interface_adapter.cast_spell.CastSpellPresenter;
+import interface_adapter.cast_spell.CastSpellViewModel;
 import interface_adapter.enemy_wave.EnemyWaveController;
 import interface_adapter.enemy_wave.EnemyWavePresenter;
 import interface_adapter.enemy_wave.EnemyWaveViewModel;
@@ -12,27 +15,22 @@ import interface_adapter.game.GameController;
 import interface_adapter.game.GamePresenter;
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
-import interface_adapter.cast_spell.CastSpellController;
-import interface_adapter.cast_spell.CastSpellPresenter;
-import interface_adapter.cast_spell.CastSpellViewModel;
+import java.util.Map;
+import javax.swing.SwingUtilities;
+import use_case.cast_spell.CastSpellInteractor;
+import use_case.cast_spell.UpdateProjectilesInteractor;
 import use_case.generate_mob_waves.EdgeSpawnPositionStrategy;
 import use_case.generate_mob_waves.GenerateMobWavesInteractor;
 import use_case.generate_mob_waves.MobWaveSettings;
 import use_case.update_game.UpdateGameInteractor;
-import use_case.cast_spell.CastSpellInteractor;
-import use_case.cast_spell.UpdateProjectilesInteractor;
 import view.EnemyWaveLayer;
+import view.FireballSprite;
 import view.GamePanel;
 import view.GameWindow;
 import view.KeyboardInput;
-import view.SlimeSprite;
-import view.FireballSprite;
 import view.MouseCastInput;
 import view.ProjectileLayer;
-
-import java.util.Map;
-
-import javax.swing.SwingUtilities;
+import view.SlimeSprite;
 
 /** Builds every object, connects them, and starts the game. The only class that knows them all. */
 public class Main {
@@ -70,7 +68,7 @@ public class Main {
                 new GameState((int) player.getX(), (int) player.getY(), player.getSize()));
         GamePresenter presenter = new GamePresenter(viewModel);
         UpdateGameInteractor updateGame = new UpdateGameInteractor(player, SCREEN_WIDTH, SCREEN_HEIGHT, presenter);
-        GameController controller = new GameController(updateGame);
+        final GameController controller = new GameController(updateGame);
 
         // Generate Mob Waves: shares the same player object, so enemies chase where it really is.
         EnemyWaveViewModel enemyWaveViewModel = new EnemyWaveViewModel();
@@ -80,7 +78,7 @@ public class Main {
                 new EdgeSpawnPositionStrategy(SPAWN_EDGE_MARGIN),
                 new MobWaveSettings(ENEMIES_PER_WAVE, ENEMY_WIDTH, ENEMY_HEIGHT, ENEMY_SPEED),
                 SCREEN_WIDTH, SCREEN_HEIGHT);
-        EnemyWaveController enemyWaveController = new EnemyWaveController(generateMobWaves);
+        final EnemyWaveController enemyWaveController = new EnemyWaveController(generateMobWaves);
 
         // Cast a Spell: shares the same player and enemy wave.
         CastSpellViewModel castSpellViewModel = new CastSpellViewModel();
@@ -100,7 +98,8 @@ public class Main {
         EnemyWaveLayer enemyWaveLayer = new EnemyWaveLayer(enemyWaveViewModel, new SlimeSprite());
         ProjectileLayer projectileLayer = new ProjectileLayer(castSpellViewModel,
                 Map.of(fireball.getId(), new FireballSprite()));
-        GamePanel panel = new GamePanel(viewModel, enemyWaveLayer, projectileLayer, SCREEN_WIDTH, SCREEN_HEIGHT);
+        GamePanel panel = new GamePanel(
+                viewModel, enemyWaveLayer, projectileLayer, SCREEN_WIDTH, SCREEN_HEIGHT);
         panel.addKeyListener(keyboard);
         panel.addMouseListener(new MouseCastInput(castSpellController, fireball.getId()));
 

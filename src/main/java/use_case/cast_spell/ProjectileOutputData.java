@@ -5,8 +5,8 @@ package use_case.cast_spell;
  */
 public final class ProjectileOutputData {
     private final String spellId;
-    private final double x;
-    private final double y;
+    private final double positionX;
+    private final double positionY;
     private final double width;
     private final double height;
     private final double velocityX;
@@ -16,56 +16,56 @@ public final class ProjectileOutputData {
      * Creates a projectile snapshot.
      *
      * @param spellId the spell identifier
-     * @param x the left edge in world pixels
-     * @param y the top edge in world pixels
+     * @param positionX the left edge in world pixels
+     * @param positionY the top edge in world pixels
      * @param width the hitbox width in pixels
      * @param height the hitbox height in pixels
      * @param velocityX horizontal displacement per tick
      * @param velocityY vertical displacement per tick
      */
-    public ProjectileOutputData(String spellId, double x, double y,
+    public ProjectileOutputData(String spellId, double positionX, double positionY,
                                 double width, double height,
                                 double velocityX, double velocityY) {
         this.spellId = spellId;
-        this.x = x;
-        this.y = y;
+        this.positionX = positionX;
+        this.positionY = positionY;
         this.width = width;
         this.height = height;
         this.velocityX = velocityX;
         this.velocityY = velocityY;
     }
 
-    /** @return the spell identifier */
+    /** Returns the spell identifier. */
     public String getSpellId() {
         return spellId;
     }
 
-    /** @return the left edge in world pixels */
+    /** Returns the left edge in world pixels. */
     public double getX() {
-        return x;
+        return positionX;
     }
 
-    /** @return the top edge in world pixels */
+    /** Returns the top edge in world pixels. */
     public double getY() {
-        return y;
+        return positionY;
     }
 
-    /** @return the hitbox width in pixels */
+    /** Returns the hitbox width in pixels. */
     public double getWidth() {
         return width;
     }
 
-    /** @return the hitbox height in pixels */
+    /** Returns the hitbox height in pixels. */
     public double getHeight() {
         return height;
     }
 
-    /** @return horizontal displacement per tick */
+    /** Returns the horizontal displacement per tick. */
     public double getVelocityX() {
         return velocityX;
     }
 
-    /** @return vertical displacement per tick */
+    /** Returns the vertical displacement per tick. */
     public double getVelocityY() {
         return velocityY;
     }

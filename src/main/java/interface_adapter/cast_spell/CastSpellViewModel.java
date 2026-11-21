@@ -17,7 +17,7 @@ public final class CastSpellViewModel {
     private final List<ProjectileImpactDisplayData> pendingImpacts = new ArrayList<>();
     private CastSpellState state = CastSpellState.empty();
 
-    /** @return the latest immutable snapshot without consuming any impacts */
+    /** Returns the latest immutable snapshot without consuming any impacts. */
     public synchronized CastSpellState getState() {
         return state;
     }

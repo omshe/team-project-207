@@ -26,6 +26,6 @@ public interface ProjectileSprite {
      */
     void drawImpact(Graphics2D graphics, ProjectileImpactDisplayData impact, int frameIndex);
 
-    /** @return the positive number of frames in one impact animation */
+    /** Returns the positive number of frames in one impact animation. */
     int getImpactFrameCount();
 }
