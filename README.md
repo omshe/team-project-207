@@ -382,10 +382,10 @@ appear near the edges and chase you, stopping when they reach you.
 
 ### Architecture (core loop)
 
-- `entity/Player`: position, size and speed (no Swing).
+- `entity/Player`: position, size, speed, facing direction and whether it is moving (no Swing).
 - `use_case/update_game`: one tick of game rules (`UpdateGameInteractor`) with input/output boundaries.
-- `interface_adapter/game`: `GameController` (key state -> request), `GamePresenter` + `GameViewModel` (result -> what to draw).
-- `view`: `GameWindow` (JFrame), `GamePanel` (draws), `KeyboardInput` (records held keys).
+- `interface_adapter/game`: `GameController` (key state -> request), `GamePresenter` + `GameViewModel` (result -> what to draw, including which `PlayerAnimation` to play and for how many ticks).
+- `view`: `GameWindow` (JFrame), `GamePanel` (draws), `KeyboardInput` (records held keys), `PlayerSprite` + `SpriteAnimation` (draw the wizard's idle/walk animations from `src/main/resources/sprites/wizard`, flipped when facing left).
 - `app`: `GameLoop` (60 ticks/s thread: input -> player update -> mob-wave update -> repaint) and `Main` (builds and wires everything).
 
 ### Architecture (Generate Mob Waves, Aayaan)
