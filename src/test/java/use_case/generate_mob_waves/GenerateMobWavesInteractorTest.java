@@ -30,6 +30,7 @@ class GenerateMobWavesInteractorTest {
     private Player player;
     private EnemyWave wave;
     private RecordingPresenter presenter;
+    private InMemorySession session;
     private GenerateMobWavesInteractor interactor;
 
     /** Records every result the interactor sends out. */
@@ -61,6 +62,7 @@ class GenerateMobWavesInteractorTest {
     private static class InMemorySession implements GenerateMobWavesDataAccessInterface {
         private final Player player;
         private final EnemyWave wave;
+        private final List<Hitbox> unwalkableAreas = new ArrayList<>();
 
         InMemorySession(Player player, EnemyWave wave) {
             this.player = player;
@@ -75,6 +77,16 @@ class GenerateMobWavesInteractorTest {
         @Override
         public EnemyWave getEnemyWave() {
             return wave;
+        }
+
+        @Override
+        public boolean isWalkable(Hitbox area) {
+            for (Hitbox blocked : unwalkableAreas) {
+                if (area.overlaps(blocked)) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 
@@ -113,6 +125,7 @@ class GenerateMobWavesInteractorTest {
                 PLAYER_SIZE, 4);
         wave = new EnemyWave();
         presenter = new RecordingPresenter();
+        session = new InMemorySession(player, wave);
         interactor = interactorWith(new EdgeSpawnPositionStrategy(16),
                 new MobWaveSettings(3, 48, 48, ENEMY_SPEED), WORLD_WIDTH, WORLD_HEIGHT);
     }
@@ -120,7 +133,7 @@ class GenerateMobWavesInteractorTest {
     private GenerateMobWavesInteractor interactorWith(SpawnPositionStrategy strategy,
                                                       MobWaveSettings settings,
                                                       double worldWidth, double worldHeight) {
-        return new GenerateMobWavesInteractor(new InMemorySession(player, wave), presenter,
+        return new GenerateMobWavesInteractor(session, presenter,
                 strategy, settings, worldWidth, worldHeight);
     }
 
@@ -487,5 +500,141 @@ class GenerateMobWavesInteractorTest {
         double deltaX = first.getCenterX() - second.getCenterX();
         double deltaY = first.getCenterY() - second.getCenterY();
         return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    }
+
+    // ----- No stacking: living enemies keep their spacing -----
+
+    /** Smallest separation between any two living enemies right now. */
+    private double closestPairSeparation() {
+        List<Enemy> enemies = wave.getActiveEnemies();
+        double closest = Double.POSITIVE_INFINITY;
+        for (int first = 0; first < enemies.size(); first++) {
+            for (int second = first + 1; second < enemies.size(); second++) {
+                closest = Math.min(closest, enemies.get(first).getHitbox()
+                        .separationFrom(enemies.get(second).getHitbox()));
+            }
+        }
+        return closest;
+    }
+
+    private static List<Hitbox> spots(Hitbox... boxes) {
+        return new ArrayList<>(Arrays.asList(boxes));
+    }
+
+    @Test
+    void chasingSlimesNeverComeCloserThanTheSpacingAndAllReachThePlayer() {
+        tick(1, 0);
+        for (int index = 0; index < 900; index++) {
+            tick(0, 0);
+            assertTrue(closestPairSeparation() >= MobWaveSettings.DEFAULT_ENEMY_SPACING - 1e-6,
+                    "tick " + index + ": separation " + closestPairSeparation());
+            for (Enemy enemy : wave.getActiveEnemies()) {
+                assertFalse(enemy.getHitbox().overlaps(playerHitbox()));
+            }
+        }
+        for (Enemy enemy : wave.getActiveEnemies()) {
+            assertTrue(enemy.getHitbox().touches(playerHitbox()),
+                    "did not reach the player: " + enemy.getHitbox().getX() + ", "
+                            + enemy.getHitbox().getY());
+        }
+    }
+
+    @Test
+    void slimeBehindAnotherWalksAroundItToReachThePlayer() {
+        // The player sits at (456, 296). Slime A touches its left side; slime B queues
+        // directly behind A on the same line.
+        ScriptedStrategy strategy = new ScriptedStrategy();
+        strategy.thenReturn(spots(new Hitbox(406, 296, 48, 48),
+                new Hitbox(300, 296, 48, 48)));
+        interactor = interactorWith(strategy, new MobWaveSettings(2, 48, 48, ENEMY_SPEED),
+                WORLD_WIDTH, WORLD_HEIGHT);
+        tick(1, 0);
+        Enemy behind = wave.getActiveEnemies().get(1);
+
+        for (int index = 0; index < 300; index++) {
+            tick(0, 0);
+            assertTrue(closestPairSeparation() >= 2 - 1e-6);
+        }
+        assertTrue(behind.getHitbox().touches(playerHitbox()));
+    }
+
+    @Test
+    void slimesThatStartTooCloseCanStillMoveApart() {
+        Enemy first = new Enemy(100, 100, 48, 48, ENEMY_SPEED);
+        Enemy second = new Enemy(149, 100, 48, 48, ENEMY_SPEED);
+        wave.startNextWave(List.of(first, second));
+        // The player is far to the right, so the right-hand slime may walk away.
+        double before = second.getX();
+        tick(0, 0);
+        assertTrue(second.getX() > before);
+        assertTrue(closestPairSeparation() >= 1 - 1e-6);
+    }
+
+    @Test
+    void spawnSkipsSpotsCloserThanTheSpacingToChosenSpot() {
+        ScriptedStrategy strategy = new ScriptedStrategy();
+        strategy.thenReturn(spots(new Hitbox(16, 16, 48, 48), new Hitbox(65, 16, 48, 48),
+                new Hitbox(66, 16, 48, 48)));
+        interactor = interactorWith(strategy, new MobWaveSettings(2, 48, 48, ENEMY_SPEED),
+                WORLD_WIDTH, WORLD_HEIGHT);
+        tick(1, 0);
+        // Spawned at x = 66 (the 65 spot is 1 px from the first), then took one step.
+        assertEquals(66, wave.getActiveEnemies().get(1).getX(), ENEMY_SPEED);
+    }
+
+    // ----- Terrain: slimes only stand on walkable tiles -----
+
+    @Test
+    void spawnSkipsSpotsOnUnwalkableTerrain() {
+        session.unwalkableAreas.add(new Hitbox(0, 0, 100, 100));
+        ScriptedStrategy strategy = new ScriptedStrategy();
+        strategy.thenReturn(spots(new Hitbox(16, 16, 48, 48), new Hitbox(200, 16, 48, 48)));
+        interactor = interactorWith(strategy, new MobWaveSettings(1, 48, 48, ENEMY_SPEED),
+                WORLD_WIDTH, WORLD_HEIGHT);
+        tick(1, 0);
+        // Spawned on the walkable spot at x = 200, then took one step.
+        assertEquals(200, wave.getActiveEnemies().get(0).getX(), ENEMY_SPEED);
+    }
+
+    @Test
+    void waveWaitsWhenNoSpawnSpotIsWalkable() {
+        session.unwalkableAreas.add(new Hitbox(0, 0, WORLD_WIDTH, WORLD_HEIGHT));
+        tick(1, 0);
+        assertFalse(wave.hasStarted());
+        assertNotNull(presenter.lastFailure);
+    }
+
+    @Test
+    void slimesWalkAroundWaterInsteadOfThroughIt() {
+        // A lake stands between the slime and the player.
+        Hitbox lake = new Hitbox(200, 250, 96, 140);
+        session.unwalkableAreas.add(lake);
+        ScriptedStrategy strategy = new ScriptedStrategy();
+        strategy.thenReturn(spots(new Hitbox(16, 296, 48, 48)));
+        interactor = interactorWith(strategy, new MobWaveSettings(1, 48, 48, ENEMY_SPEED),
+                WORLD_WIDTH, WORLD_HEIGHT);
+        tick(1, 0);
+        Enemy slime = wave.getActiveEnemies().get(0);
+
+        for (int index = 0; index < 600; index++) {
+            tick(0, 0);
+            assertFalse(slime.getHitbox().overlaps(lake), "stepped into water at tick " + index);
+        }
+        assertTrue(slime.getHitbox().touches(playerHitbox()));
+    }
+
+    @Test
+    void slimesStayInsideTheWorldWhileDetouring() {
+        session.unwalkableAreas.add(new Hitbox(100, 0, 40, 600));
+        ScriptedStrategy strategy = new ScriptedStrategy();
+        strategy.thenReturn(spots(new Hitbox(16, 296, 48, 48)));
+        interactor = interactorWith(strategy, new MobWaveSettings(1, 48, 48, ENEMY_SPEED),
+                WORLD_WIDTH, WORLD_HEIGHT);
+        tick(1, 0);
+        Enemy slime = wave.getActiveEnemies().get(0);
+        for (int index = 0; index < 600; index++) {
+            tick(0, 0);
+            assertTrue(slime.getHitbox().isInsideWorld(WORLD_WIDTH, WORLD_HEIGHT));
+        }
     }
 }

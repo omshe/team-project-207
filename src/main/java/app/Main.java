@@ -1,10 +1,15 @@
 package app;
 
+import data_access.FileMapDataAccessObject;
 import data_access.InMemoryCastSpellDataAccessObject;
 import data_access.InMemoryEnemyWaveDataAccessObject;
+import entity.DirtTileType;
 import entity.EnemyWave;
 import entity.FireballSpell;
 import entity.Player;
+import entity.TileMap;
+import entity.TileTypeRegistry;
+import entity.WaterTileType;
 import interface_adapter.cast_spell.CastSpellController;
 import interface_adapter.cast_spell.CastSpellPresenter;
 import interface_adapter.cast_spell.CastSpellViewModel;
@@ -16,6 +21,7 @@ import interface_adapter.game.GamePresenter;
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
 import interface_adapter.game.PlayerAnimation;
+import java.util.List;
 import java.util.Map;
 import javax.swing.SwingUtilities;
 import use_case.cast_spell.CastSpellInteractor;
@@ -23,6 +29,7 @@ import use_case.cast_spell.UpdateProjectilesInteractor;
 import use_case.generate_mob_waves.EdgeSpawnPositionStrategy;
 import use_case.generate_mob_waves.GenerateMobWavesInteractor;
 import use_case.generate_mob_waves.MobWaveSettings;
+import use_case.load_map.MapLoadingException;
 import use_case.update_game.UpdateGameInteractor;
 import view.EnemyWaveLayer;
 import view.FireballSprite;
@@ -51,6 +58,8 @@ public class Main {
     private static final double ENEMY_HEIGHT = 34;
     private static final double ENEMY_SPEED = 2;
     private static final double SPAWN_EDGE_MARGIN = 16;
+    // Living slimes keep at least this many pixels between each other so they never stack.
+    private static final double ENEMY_SPACING = 2;
 
     // Fireball settings (tunable MVP defaults).
     private static final double PROJECTILE_SPEED = 8;
@@ -75,6 +84,10 @@ public class Main {
         if (mapLayer == null) {
             return;
         }
+        TileMap enemyTerrain = loadEnemyTerrain();
+        if (enemyTerrain == null) {
+            return;
+        }
 
         // Entities
         Player player = new Player((SCREEN_WIDTH - PLAYER_SIZE) / 2.0,
@@ -93,10 +106,11 @@ public class Main {
         // Generate Mob Waves: shares the same player object, so enemies chase where it really is.
         EnemyWaveViewModel enemyWaveViewModel = new EnemyWaveViewModel();
         GenerateMobWavesInteractor generateMobWaves = new GenerateMobWavesInteractor(
-                new InMemoryEnemyWaveDataAccessObject(player, enemyWave),
+                new InMemoryEnemyWaveDataAccessObject(player, enemyWave, enemyTerrain),
                 new EnemyWavePresenter(enemyWaveViewModel),
                 new EdgeSpawnPositionStrategy(SPAWN_EDGE_MARGIN),
-                new MobWaveSettings(ENEMIES_PER_WAVE, ENEMY_WIDTH, ENEMY_HEIGHT, ENEMY_SPEED),
+                new MobWaveSettings(ENEMIES_PER_WAVE, ENEMY_WIDTH, ENEMY_HEIGHT, ENEMY_SPEED,
+                        ENEMY_SPACING),
                 SCREEN_WIDTH, SCREEN_HEIGHT);
         final EnemyWaveController enemyWaveController = new EnemyWaveController(generateMobWaves);
 
@@ -128,5 +142,22 @@ public class Main {
         panel.requestFocusInWindow();
 
         new GameLoop(controller, enemyWaveController, castSpellController, keyboard, panel).start();
+    }
+
+    /**
+     * Loads the starting map's terrain for the enemies' walkability checks. MapBuilder loads the
+     * same file for drawing but keeps only display data, so the terrain is read again here.
+     *
+     * @return the terrain, or {@code null} after reporting an error
+     */
+    private static TileMap loadEnemyTerrain() {
+        TileTypeRegistry tileTypes = new TileTypeRegistry(
+                List.of(new WaterTileType(), new DirtTileType()));
+        try {
+            return new FileMapDataAccessObject(tileTypes, TILE_SIZE).load(STARTING_MAP);
+        } catch (MapLoadingException error) {
+            GameWindow.showStartupError(error.getMessage());
+            return null;
+        }
     }
 }

@@ -3,6 +3,7 @@ package use_case.generate_mob_waves;
 import entity.Enemy;
 import entity.EnemyWave;
 import entity.Hitbox;
+import entity.MovementSpace;
 import entity.Player;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,10 +17,13 @@ import java.util.List;
  *   <li><b>Start a wave if one is due.</b> The first wave is due on the first tick where the
  *       player asks to move (a non-zero direction). After that, a new wave is due only once
  *       the current wave has been cleared. A wave starts only if <em>all</em> of its enemies
- *       fit (inside the world, not touching the player or each other); otherwise nothing is
- *       placed, the fail view is shown, and the next tick tries again.</li>
+ *       fit (inside the world, on walkable terrain, not touching the player, and spaced apart
+ *       from each other); otherwise nothing is placed, the fail view is shown, and the next
+ *       tick tries again.</li>
  *   <li><b>Chase.</b> Every active enemy pursues the player's current hitbox (see
- *       {@link Enemy#pursue(Hitbox)}).</li>
+ *       {@link Enemy#pursue(Hitbox, MovementSpace)}). A step is allowed only if the enemy stays
+ *       inside the world, on walkable terrain, and does not come closer than the configured
+ *       spacing to another enemy. Blocked enemies walk around the obstacle.</li>
  *   <li><b>Present.</b> Send an immutable copy of the wave state to the output boundary.</li>
  * </ol>
  *
@@ -74,13 +78,60 @@ public class GenerateMobWavesInteractor implements GenerateMobWavesInputBoundary
             }
         }
 
-        // Step 2: every active enemy chases the player's position for this tick.
-        for (Enemy enemy : wave.getActiveEnemies()) {
-            enemy.pursue(playerHitbox);
+        // Step 2: every enemy chases the player's position for this tick. The list holds the
+        // live enemies, so each one sees where the earlier ones have already moved.
+        List<Enemy> enemies = wave.getActiveEnemies();
+        for (Enemy enemy : enemies) {
+            enemy.pursue(playerHitbox, movementSpaceFor(enemy, enemies));
         }
 
         // Step 3: present.
         presenter.prepareSuccessView(buildOutputData(wave));
+    }
+
+    /**
+     * Builds the movement rules for one enemy for this tick.
+     *
+     * @param mover  the enemy about to move
+     * @param others the wave's enemies; {@code mover} itself is skipped
+     * @return a space that allows a step only inside the world, on walkable terrain, and
+     *     without crowding another enemy
+     */
+    private MovementSpace movementSpaceFor(Enemy mover, List<Enemy> others) {
+        return (current, next) -> isStandable(next)
+                && keepsSpacing(mover, current, next, others);
+    }
+
+    /** An enemy may stand anywhere fully inside the world on walkable terrain. */
+    private boolean isStandable(Hitbox area) {
+        return area.isInsideWorld(worldWidth, worldHeight) && dataAccess.isWalkable(area);
+    }
+
+    /**
+     * Returns whether a step keeps the mover from crowding the other enemies.
+     *
+     * <p>A step is fine if, after it, the mover is at least the spacing away from every other
+     * enemy. If it would be closer than that to one of them, it is still allowed as long as it
+     * does not bring the two any closer than they already are, so enemies that start too close
+     * can always slide apart instead of freezing.
+     */
+    private boolean keepsSpacing(Enemy mover, Hitbox current, Hitbox next, List<Enemy> others) {
+        double spacing = settings.getEnemySpacing();
+        for (Enemy other : others) {
+            if (other == mover) {
+                continue;
+            }
+            Hitbox otherHitbox = other.getHitbox();
+            double separationAfter = next.separationFrom(otherHitbox);
+            if (separationAfter >= spacing - Hitbox.CONTACT_TOLERANCE) {
+                continue;
+            }
+            double separationBefore = current.separationFrom(otherHitbox);
+            if (separationAfter < separationBefore - Hitbox.CONTACT_TOLERANCE) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -133,7 +184,7 @@ public class GenerateMobWavesInteractor implements GenerateMobWavesInputBoundary
      * <p>The search is finite: it checks each candidate once and stops as soon as it has
      * enough spots.
      *
-     * @return up to {@code enemiesPerWave} valid, mutually non-touching spots
+     * @return up to {@code enemiesPerWave} valid, spaced-apart spots
      */
     private List<Hitbox> chooseSpawnSpots(Hitbox playerHitbox) {
         List<Hitbox> candidates = spawnPositionStrategy.proposeCandidates(
@@ -153,12 +204,13 @@ public class GenerateMobWavesInteractor implements GenerateMobWavesInputBoundary
     }
 
     /**
-     * A spawn spot is valid if it is fully inside the world and touches neither the player
-     * nor any spot already chosen.
+     * A spawn spot is valid if it is fully inside the world on walkable terrain, does not touch
+     * the player, and is at least the enemy spacing away from every spot already chosen (and
+     * never touching one, even when the spacing is zero).
      */
     private boolean isValidSpawnSpot(Hitbox candidate, Hitbox playerHitbox,
                                      List<Hitbox> alreadyChosen) {
-        if (!candidate.isInsideWorld(worldWidth, worldHeight)) {
+        if (!isStandable(candidate)) {
             return false;
         }
         if (candidate.touches(playerHitbox)) {
@@ -166,6 +218,10 @@ public class GenerateMobWavesInteractor implements GenerateMobWavesInputBoundary
         }
         for (Hitbox other : alreadyChosen) {
             if (candidate.touches(other)) {
+                return false;
+            }
+            if (candidate.separationFrom(other)
+                    < settings.getEnemySpacing() - Hitbox.CONTACT_TOLERANCE) {
                 return false;
             }
         }
