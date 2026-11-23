@@ -19,7 +19,8 @@ class SupportingClassesTest {
         List<Hitbox> candidates = strategy.proposeCandidates(48, 30, 960, 640,
                 new Hitbox(456, 296, 48, 48));
 
-        assertEquals(8, candidates.size());
+        // The first eight are the edge middles and corners; more edge spots follow.
+        assertTrue(candidates.size() > 8);
         Hitbox leftMiddle = candidates.get(0);
         assertEquals(16, leftMiddle.getX(), 0);
         assertEquals(305, leftMiddle.getY(), 0);
@@ -38,6 +39,28 @@ class SupportingClassesTest {
             assertEquals(48, candidate.getWidth(), 0);
             assertEquals(30, candidate.getHeight(), 0);
         }
+    }
+
+    @Test
+    void edgeStrategyOffersEnoughSpacedSpotsForBigWaves() {
+        EdgeSpawnPositionStrategy strategy = new EdgeSpawnPositionStrategy(16);
+        List<Hitbox> candidates = strategy.proposeCandidates(56, 34, 960, 640,
+                new Hitbox(456, 296, 48, 48));
+        // Count how many could be chosen together without touching each other.
+        List<Hitbox> chosen = new ArrayList<>();
+        for (Hitbox candidate : candidates) {
+            assertTrue(candidate.isInsideWorld(960, 640));
+            boolean free = true;
+            for (Hitbox other : chosen) {
+                if (candidate.separationFrom(other) < 2) {
+                    free = false;
+                }
+            }
+            if (free) {
+                chosen.add(candidate);
+            }
+        }
+        assertTrue(chosen.size() >= 40, "only " + chosen.size() + " spaced spots");
     }
 
     @Test
@@ -63,6 +86,27 @@ class SupportingClassesTest {
         MobWaveSettings full = new MobWaveSettings(3, 56, 34, 2, 4, 32);
         assertEquals(4, full.getEnemySpacing(), 0);
         assertEquals(32, full.getDefeatDurationTicks());
+    }
+
+    @Test
+    void eachWaveCanHaveMoreEnemiesThanTheLast() {
+        MobWaveSettings growing = new MobWaveSettings(3, 56, 34, 2, 2, 32, 1, 10);
+        assertEquals(1, growing.getExtraEnemiesPerWave());
+        assertEquals(3, growing.getEnemiesInWave(1));
+        assertEquals(4, growing.getEnemiesInWave(2));
+        assertEquals(10, growing.getEnemiesInWave(8));
+        assertEquals(10, growing.getEnemiesInWave(9), "capped at 10");
+        assertEquals(10, growing.getEnemiesInWave(Integer.MAX_VALUE), "no overflow");
+        assertEquals(10, growing.getMaxEnemiesPerWave());
+        MobWaveSettings fixed = new MobWaveSettings(3, 56, 34, 2);
+        assertEquals(MobWaveSettings.DEFAULT_EXTRA_ENEMIES_PER_WAVE,
+                fixed.getExtraEnemiesPerWave());
+        assertEquals(3, fixed.getEnemiesInWave(7));
+        assertThrows(IllegalArgumentException.class, () -> growing.getEnemiesInWave(0));
+        assertThrows(IllegalArgumentException.class,
+                () -> new MobWaveSettings(3, 56, 34, 2, 2, 32, -1, 10));
+        assertThrows(IllegalArgumentException.class,
+                () -> new MobWaveSettings(3, 56, 34, 2, 2, 32, 1, 2));
     }
 
     @Test

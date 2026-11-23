@@ -17,12 +17,14 @@ import entity.WaterTileType;
 import interface_adapter.enemy_wave.EnemyWavePresenter;
 import interface_adapter.enemy_wave.EnemyWaveViewModel;
 import java.util.List;
+import java.util.Random;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import use_case.generate_mob_waves.EdgeSpawnPositionStrategy;
 import use_case.generate_mob_waves.GenerateMobWavesInputData;
 import use_case.generate_mob_waves.GenerateMobWavesInteractor;
 import use_case.generate_mob_waves.MobWaveSettings;
+import use_case.generate_mob_waves.RandomEdgeSpawnPositionStrategy;
 
 /**
  * Runs mob waves on the real {@code level1.txt} arena with the game's real numbers (56 x 34
@@ -53,7 +55,7 @@ class MobWaveArenaIntegrationTest {
         interactor = new GenerateMobWavesInteractor(dataAccess,
                 new EnemyWavePresenter(new EnemyWaveViewModel()),
                 new EdgeSpawnPositionStrategy(16),
-                new MobWaveSettings(3, 56, 34, 2, SPACING, DEFEAT_TICKS), 960, 640);
+                new MobWaveSettings(3, 56, 34, 2, SPACING, DEFEAT_TICKS, 1, 100), 960, 640);
     }
 
     private Hitbox playerHitbox() {
@@ -126,7 +128,7 @@ class MobWaveArenaIntegrationTest {
         }
         interactor.execute(new GenerateMobWavesInputData(0, 0));
         assertEquals(2, wave.getWaveNumber());
-        assertEquals(3, wave.getActiveEnemies().size());
+        assertEquals(4, wave.getActiveEnemies().size(), "wave 2 has one more slime");
         assertRulesHold(0, true);
     }
 
@@ -175,4 +177,47 @@ class MobWaveArenaIntegrationTest {
         assertTrue(cases > 3000);
     }
 
+    @Test
+    void twentyGrowingWavesAllSpawnOnLandAndKeepTheRules() {
+        player = new Player(456, 296, 48, 4);
+        setUpWithPlayer();
+        interactor.execute(new GenerateMobWavesInputData(1, 0));
+        for (int waveNumber = 1; waveNumber <= 20; waveNumber++) {
+            assertEquals(waveNumber, wave.getWaveNumber());
+            assertEquals(2 + waveNumber, wave.getActiveEnemies().size());
+            for (int tick = 0; tick < 120; tick++) {
+                interactor.execute(new GenerateMobWavesInputData(0, 0));
+                assertRulesHold(tick, true);
+            }
+            for (Enemy enemy : wave.getActiveEnemies()) {
+                enemy.defeat();
+            }
+            for (int tick = 0; tick < DEFEAT_TICKS; tick++) {
+                interactor.execute(new GenerateMobWavesInputData(0, 0));
+            }
+        }
+    }
+
+    @Test
+    void randomOutskirtsWavesUpToTheCapSpawnApartOnLandForManySeeds() {
+        for (long seed = 0; seed < 25; seed++) {
+            player = new Player(456, 296, 48, 4);
+            wave = new EnemyWave();
+            dataAccess = new InMemoryEnemyWaveDataAccessObject(player, wave, terrain);
+            interactor = new GenerateMobWavesInteractor(dataAccess,
+                    new EnemyWavePresenter(new EnemyWaveViewModel()),
+                    new RandomEdgeSpawnPositionStrategy(new Random(seed), 16, 64, 192, 200),
+                    new MobWaveSettings(3, 56, 34, 2, SPACING, 0, 1, 10), 960, 640);
+            interactor.execute(new GenerateMobWavesInputData(1, 0));
+            for (int waveNumber = 1; waveNumber <= 10; waveNumber++) {
+                assertEquals(waveNumber, wave.getWaveNumber(), "seed " + seed);
+                assertEquals(Math.min(2 + waveNumber, 10), wave.getActiveEnemies().size());
+                assertRulesHold(waveNumber, true);
+                for (Enemy enemy : wave.getActiveEnemies()) {
+                    enemy.defeat();
+                }
+                interactor.execute(new GenerateMobWavesInputData(0, 0));
+            }
+        }
+    }
 }

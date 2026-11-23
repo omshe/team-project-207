@@ -709,4 +709,50 @@ class GenerateMobWavesInteractorTest {
         tick(0, 0);
         assertEquals(2, wave.getWaveNumber());
     }
+
+    // ----- Difficulty: each wave can be bigger than the last -----
+
+    private void defeatAndClearWave() {
+        for (Enemy enemy : wave.getActiveEnemies()) {
+            enemy.defeat();
+        }
+        tick(0, 0);
+    }
+
+    @Test
+    void eachNewWaveHasOneMoreSlimeWhenConfigured() {
+        interactor = interactorWith(new EdgeSpawnPositionStrategy(16),
+                new MobWaveSettings(3, 48, 48, ENEMY_SPEED, 2, 0, 1, 6), WORLD_WIDTH, WORLD_HEIGHT);
+        tick(1, 0);
+        assertEquals(3, wave.getActiveEnemies().size());
+        for (int expectedWave = 2; expectedWave <= 4; expectedWave++) {
+            defeatAndClearWave();
+            assertEquals(expectedWave, wave.getWaveNumber());
+            assertEquals(expectedWave + 2, wave.getActiveEnemies().size());
+            assertEquals(expectedWave + 2, presenter.lastOutput.getEnemies().size());
+        }
+        // The cap of 6 holds from wave 4 on.
+        for (int expectedWave = 5; expectedWave <= 7; expectedWave++) {
+            defeatAndClearWave();
+            assertEquals(expectedWave, wave.getWaveNumber());
+            assertEquals(6, wave.getActiveEnemies().size());
+        }
+    }
+
+    @Test
+    void waveTooBigForTheSpawnSpotsWaitsInsteadOfStartingPartly() {
+        ScriptedStrategy strategy = new ScriptedStrategy();
+        strategy.thenReturn(spots(new Hitbox(16, 16, 48, 48), new Hitbox(200, 16, 48, 48),
+                new Hitbox(400, 16, 48, 48)));
+        interactor = interactorWith(strategy,
+                new MobWaveSettings(3, 48, 48, ENEMY_SPEED, 2, 0, 1, 10),
+                WORLD_WIDTH, WORLD_HEIGHT);
+        tick(1, 0);
+        defeatAndClearWave();
+        // Wave 2 needs four spots but only three exist.
+        assertEquals(1, wave.getWaveNumber());
+        assertTrue(wave.isCleared());
+        assertNotNull(presenter.lastFailure);
+        assertTrue(presenter.lastFailure.contains("Wave 2"));
+    }
 }

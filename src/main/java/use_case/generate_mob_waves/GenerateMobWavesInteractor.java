@@ -18,10 +18,11 @@ import java.util.List;
  *       been shown for the configured defeat duration, it is removed from the wave.</li>
  *   <li><b>Start a wave if one is due.</b> The first wave is due on the first tick where the
  *       player asks to move (a non-zero direction). After that, a new wave is due only once
- *       the current wave has been cleared. A wave starts only if <em>all</em> of its enemies
- *       fit (inside the world, on walkable terrain, not touching the player, and spaced apart
- *       from each other); otherwise nothing is placed, the fail view is shown, and the next
- *       tick tries again.</li>
+ *       the current wave has been cleared. Each wave's size comes from
+ *       {@link MobWaveSettings#getEnemiesInWave(int)}, so later waves can be bigger. A wave
+ *       starts only if <em>all</em> of its enemies fit (inside the world, on walkable
+ *       terrain, not touching the player, and spaced apart from each other); otherwise
+ *       nothing is placed, the fail view is shown, and the next tick tries again.</li>
  *   <li><b>Chase.</b> Every living enemy pursues the player's current hitbox (see
  *       {@link Enemy#pursue(Hitbox, MovementSpace)}). A step is allowed only if the enemy stays
  *       inside the world, on walkable terrain, and does not come closer than the configured
@@ -183,8 +184,9 @@ public class GenerateMobWavesInteractor implements GenerateMobWavesInputBoundary
      *     case the wave state is unchanged (no partial wave)
      */
     private boolean tryStartWave(EnemyWave wave, Hitbox playerHitbox) {
-        List<Hitbox> spawnSpots = chooseSpawnSpots(playerHitbox);
-        if (spawnSpots.size() < settings.getEnemiesPerWave()) {
+        int enemyCount = settings.getEnemiesInWave(wave.getWaveNumber() + 1);
+        List<Hitbox> spawnSpots = chooseSpawnSpots(playerHitbox, enemyCount);
+        if (spawnSpots.size() < enemyCount) {
             return false;
         }
 
@@ -203,16 +205,17 @@ public class GenerateMobWavesInteractor implements GenerateMobWavesInputBoundary
      * <p>The search is finite: it checks each candidate once and stops as soon as it has
      * enough spots.
      *
-     * @return up to {@code enemiesPerWave} valid, spaced-apart spots
+     * @param enemyCount how many spots the wave needs
+     * @return up to {@code enemyCount} valid, spaced-apart spots
      */
-    private List<Hitbox> chooseSpawnSpots(Hitbox playerHitbox) {
+    private List<Hitbox> chooseSpawnSpots(Hitbox playerHitbox, int enemyCount) {
         List<Hitbox> candidates = spawnPositionStrategy.proposeCandidates(
                 settings.getEnemyWidth(), settings.getEnemyHeight(),
                 worldWidth, worldHeight, playerHitbox);
 
         List<Hitbox> chosen = new ArrayList<>();
         for (Hitbox candidate : candidates) {
-            if (chosen.size() == settings.getEnemiesPerWave()) {
+            if (chosen.size() == enemyCount) {
                 break;
             }
             if (isValidSpawnSpot(candidate, playerHitbox, chosen)) {

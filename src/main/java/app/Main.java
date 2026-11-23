@@ -23,12 +23,13 @@ import interface_adapter.game.GameViewModel;
 import interface_adapter.game.PlayerAnimation;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import javax.swing.SwingUtilities;
 import use_case.cast_spell.CastSpellInteractor;
 import use_case.cast_spell.UpdateProjectilesInteractor;
-import use_case.generate_mob_waves.EdgeSpawnPositionStrategy;
 import use_case.generate_mob_waves.GenerateMobWavesInteractor;
 import use_case.generate_mob_waves.MobWaveSettings;
+import use_case.generate_mob_waves.RandomEdgeSpawnPositionStrategy;
 import use_case.load_map.MapLoadingException;
 import use_case.update_game.UpdateGameInteractor;
 import view.EnemyWaveLayer;
@@ -55,10 +56,18 @@ public class Main {
     // Mob waves (tunable MVP defaults). The 56 x 34 hitbox matches the slime art at exactly
     // 2x scale, which keeps the pixel art crisp. Speed is half the player's, so they can outrun it.
     private static final int ENEMIES_PER_WAVE = 3;
+    // Each wave has one more slime than the last (3, 4, 5, ...), so rounds get harder.
+    private static final int EXTRA_ENEMIES_PER_WAVE = 1;
+    // ... until the cap: every wave from wave 8 on has 10 slimes.
+    private static final int MAX_ENEMIES_PER_WAVE = 10;
     private static final double ENEMY_WIDTH = 56;
     private static final double ENEMY_HEIGHT = 34;
     private static final double ENEMY_SPEED = 2;
     private static final double SPAWN_EDGE_MARGIN = 16;
+    // Random spawns land 16 to 80 px in from an edge, at least 192 px (6 tiles) from the player.
+    private static final double SPAWN_BAND_DEPTH = 64;
+    private static final double SPAWN_MIN_PLAYER_DISTANCE = 192;
+    private static final int SPAWN_CANDIDATES = 200;
     // Living slimes keep at least this many pixels between each other so they never stack.
     private static final double ENEMY_SPACING = 2;
 
@@ -111,9 +120,11 @@ public class Main {
         GenerateMobWavesInteractor generateMobWaves = new GenerateMobWavesInteractor(
                 new InMemoryEnemyWaveDataAccessObject(player, enemyWave, enemyTerrain),
                 new EnemyWavePresenter(enemyWaveViewModel),
-                new EdgeSpawnPositionStrategy(SPAWN_EDGE_MARGIN),
+                new RandomEdgeSpawnPositionStrategy(new Random(), SPAWN_EDGE_MARGIN,
+                        SPAWN_BAND_DEPTH, SPAWN_MIN_PLAYER_DISTANCE, SPAWN_CANDIDATES),
                 new MobWaveSettings(ENEMIES_PER_WAVE, ENEMY_WIDTH, ENEMY_HEIGHT, ENEMY_SPEED,
-                        ENEMY_SPACING, slimeSprite.getDeathAnimationTicks()),
+                        ENEMY_SPACING, slimeSprite.getDeathAnimationTicks(),
+                        EXTRA_ENEMIES_PER_WAVE, MAX_ENEMIES_PER_WAVE),
                 SCREEN_WIDTH, SCREEN_HEIGHT);
         final EnemyWaveController enemyWaveController = new EnemyWaveController(generateMobWaves);
 
