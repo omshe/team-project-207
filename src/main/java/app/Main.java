@@ -35,6 +35,7 @@ import view.EnemyWaveLayer;
 import view.FireballSprite;
 import view.GamePanel;
 import view.GameWindow;
+import view.HitboxOverlayKey;
 import view.KeyboardInput;
 import view.MapLayer;
 import view.MouseCastInput;
@@ -137,6 +138,7 @@ public class Main {
         GamePanel panel = new GamePanel(viewModel, PlayerSprite.wizard(), mapLayer, enemyWaveLayer,
                 projectileLayer, SCREEN_WIDTH, SCREEN_HEIGHT);
         panel.addKeyListener(keyboard);
+        panel.addKeyListener(new HitboxOverlayKey(enemyWaveLayer));
         panel.addMouseListener(new MouseCastInput(castSpellController, fireball.getId()));
 
         GameWindow window = new GameWindow(panel);

@@ -101,6 +101,30 @@ class SlimeSpriteTest {
     }
 
     @Test
+    void everyIdleAndWalkFrameTogetherFillTheHitboxExactly() {
+        // The hitbox should be what you see: the union of the slime's drawn pixels over all
+        // idle and walk frames, both facings, is exactly the 56 x 34 hitbox.
+        SlimeSprite sprite = new SlimeSprite();
+        Rectangle drawnUnion = null;
+        for (boolean facingLeft : new boolean[] {false, true}) {
+            for (boolean moving : new boolean[] {false, true}) {
+                for (long tick = 0; tick < 6 * SlimeSprite.TICKS_PER_FRAME;
+                        tick += SlimeSprite.TICKS_PER_FRAME) {
+                    Rectangle drawn = drawAndMeasure(sprite,
+                            new EnemyDisplayData(100, 100, 56, 34, moving, facingLeft, false, 0),
+                            tick);
+                    if (drawnUnion == null) {
+                        drawnUnion = drawn;
+                    } else {
+                        drawnUnion = drawnUnion.union(drawn);
+                    }
+                }
+            }
+        }
+        assertEquals(new Rectangle(100, 100, 56, 34), drawnUnion);
+    }
+
+    @Test
     void deathSheetHasFourFramesAndLastsThatManyFrameLengths() {
         SpriteSheet death = new SpriteSheet("/sprites/enemy/slime/slime-death.png", 100, 100);
         assertEquals(4, death.getFrameCount());
