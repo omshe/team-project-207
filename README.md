@@ -99,16 +99,17 @@ Preconditions:
 
 Trigger: The player makes their first movement in the game. (Every later wave is triggered by the previous wave being defeated.)
 
-Success outcome: A wave of mobs appears inside the world, away from the player, and chases the player wherever they go, stopping when it reaches them. Once that wave is defeated, the next wave appears.
+Success outcome: A wave of mobs appears inside the world, away from the player, and chases the player wherever they go over walkable ground, going around water and each other, and stopping when it reaches them. Defeated mobs play a death animation and disappear. Once that wave is defeated, the next wave appears.
 
 Main Success Scenario:
 1. The player presses a movement key for the first time.
-2. The game places a wave of mobs inside the world, near its edges, without any mob overlapping the player or another mob.
+2. The game places a wave of mobs at random spots on the outskirts of the world (near its edges, never right beside the player), on walkable ground, with a small gap between mobs.
 3. The game shows the current wave number.
-4. Every update, each mob moves toward the player's current position, no faster diagonally than straight.
+4. Every update, each living mob moves toward the player's current position, no faster diagonally than straight, staying on walkable ground and never stepping onto another mob.
 5. A mob that reaches the player stops right beside them, without overlapping them.
 6. When the player moves away, the mob starts chasing again.
-7. When every mob in the wave has been defeated, the game places the next wave and the wave number goes up by one.
+7. When a mob is defeated (for example by a spell), it stops, plays its death animation once and then disappears. While dying it no longer chases, blocks other mobs or can be hit.
+8. When every mob in the wave has been defeated and has disappeared, the game places the next wave, which has one more mob than the last (up to 10 mobs), and the wave number goes up by one.
 
 Extensions:
 - 1a. The player presses no movement keys, or only opposite keys that cancel out (left and right together).
@@ -117,19 +118,24 @@ Extensions:
   1. No mobs appear (the game never places part of a wave).
   2. The game tells the player the wave could not start.
   3. The game tries again on the next update, and the player can keep moving meanwhile.
+- 4a. Another mob, or unwalkable ground such as water, is in the way.
+  1. The mob walks along the obstacle's edge, turning at its corners, until it can head for the player again without walking back into the same obstacle. It keeps a gap of at least 2 pixels from other living mobs.
+  2. Its route may be a little longer than the shortest one, and it can still get stuck in a dead end, since it does not plan a full path.
+- 4b. The player stands on ground the mobs cannot walk on (the player can currently cross water).
+  1. The mobs get as close as walkable ground allows and wait there or keep walking around the edge.
 - 5a. The player walks into a mob that is already beside them.
   1. The mob stays where it is; it does not push the player or move through them.
-- 7a. At least one mob in the wave is still alive.
+- 8a. At least one mob in the wave is still alive, or still playing its death animation.
   1. No new wave appears.
 
-MVP scope (November 2026): mobs cannot be defeated yet, because combat (Use Case 4) is not built.
-Touching the player does not hurt the player or defeat the mob. The first wave therefore stays
-on screen; step 7 is ready for combat to plug into and is covered by automated tests.
+MVP scope (November 2026): for the demo, one fireball hit defeats a mob (Use Case 4); there is
+no health yet. Touching the player does not hurt the player or defeat the mob. Press F3 to
+outline every living mob's hitbox, to check that collisions match what is drawn.
 
 Planned (after the MVP, once health and combat exist):
 - Mobs damage the player on contact.
-- Later waves get bigger or harder, and new kinds of mob appear.
-- 4a. The player is defeated by the mobs: the player is shown the death screen and can restart the game.
+- Later waves get faster or tougher, and new kinds of mob appear (waves already grow by one mob each).
+- 4c. The player is defeated by the mobs: the player is shown the death screen and can restart the game.
 
 ### Use Case 3
 
@@ -171,7 +177,7 @@ Main Success Scenario:
 3. The game launches one projectile from the player's current centre.
 4. The projectile travels at a constant velocity in its initial direction.
    Its flight animation repeats and faces the direction of travel.
-6. On enemy contact, flight ends and a circular impact animation plays once at the collision location. The enemy remains active.
+6. On enemy contact, flight ends, the first enemy along the projectile's path is defeated, and a circular impact animation plays once at the collision location. Enemies that are already defeated are not hit.
 7. If the projectile leaves the world, it disappears without an impact animation.
 
 Extensions:
@@ -180,7 +186,7 @@ Extensions:
 - 4a. An enemy or the cursor moves. The projectile continues in its original direction.
 - 4b. The projectile passes through the original aim point. It continues travelling in its original direction.
 
-**MVP scope** The aim point determines the projectile's initial direction. The projectile continues until enemy contact or world exit. Enemy contact produces one visual impact, which disappears after its animation finishes. Health, damage, and enemy defeat are planned for later combat work.
+**MVP scope** The aim point determines the projectile's initial direction. The projectile continues until enemy contact or world exit. Enemy contact produces one visual impact, which disappears after its animation finishes. For the demo, one hit defeats the enemy (a one-hit kill); health and damage are planned for later combat work.
 
 ### Use Case 5
 Name: Enter the world
@@ -320,9 +326,11 @@ Relevant methods:
 Represents an enemy spawned during a wave.
 
 *Implemented for the MVP:* `entity/Enemy` (position, hitbox size, speed in pixels per tick,
-straight-line chase that stops at first contact), `entity/EnemyWave` (wave number and active
-enemies) and `entity/Hitbox` (pure rectangle geometry with the contact rule). Health, attack
-damage, attack range, enemy types and `takeDamage`/`isAlive` below are still **planned**.
+a chase that stops at first contact and sidesteps around anything its `MovementSpace` forbids,
+and a one-way `defeat()` with a timer), `entity/EnemyWave` (wave number, living and defeated
+enemies) and `entity/Hitbox` (pure rectangle geometry with the contact, overlap and separation
+rules). Health, attack damage, attack range, enemy types and `takeDamage`/`isAlive` below are
+still **planned**; for now one hit defeats an enemy.
 
 Instance variables:
 - String enemyId — unique identifier for the enemy.
@@ -408,10 +416,12 @@ Requires JDK 11+ (17 recommended).
 
 Move the wizard with WASD or the arrow keys over the green dirt and blue water map.
 Your first move starts wave 1: three slimes appear near the edges and chase you, stopping
-when they reach you. Player-water collision is deferred, so the player can cross water.
-Enemy-water collision is also not wired into the enemy movement use case yet.
-Left-click to cast a fireball toward the pointer. Fireballs cross water and disappear on
-enemy contact or when leaving the arena; enemy damage is deferred.
+when they reach you. They walk around water and around each other instead of stacking.
+Player-water collision is deferred, so the player can cross water.
+Left-click to cast a fireball toward the pointer. Fireballs cross water; a fireball that hits
+a slime defeats it in one hit (demo), and the slime plays its death animation and disappears.
+When a whole wave is gone, the next one appears with one more slime (3, 4, 5, ... up to 10),
+at random spots around the edges of the map. Press F3 to show or hide the slimes' hitboxes.
 
 ### Tests, coverage and style
 
@@ -491,8 +501,8 @@ about player movement, enemy behaviour, fireballs or a camera.
 
 To edit the map, change the numbers in `level1.txt` and rebuild resources before the next run
 (for example, with `mvn compile`). Player collision and detailed tile artwork are deferred.
-The terrain data marks water as non-walkable for the enemy feature to use; integrating enemy
-movement is separate work. Fireballs should cross water.
+The terrain data marks water as non-walkable; the enemies use it (through `TileMap.isWalkable`)
+to stay on dirt. Fireballs should cross water.
 
 #### Map verification
 
@@ -508,22 +518,37 @@ the shipped map and tile images, with a placeholder player at its starting posit
 
 Runs every tick right after the player moves, as its own use case.
 
-- `entity`: `Enemy` (chases a target, stops at first contact), `EnemyWave` (wave number,
-  active enemies, `removeEnemy` seam for future combat), `Hitbox` (rectangle geometry and the
-  touching rule).
-- `use_case/generate_mob_waves`: `GenerateMobWavesInteractor` (when a wave starts, placing a
-  whole wave or none, chasing) with its input/output boundaries and data, the
-  `GenerateMobWavesDataAccessInterface` (player and wave), `MobWaveSettings` (count, size,
-  speed) and the `SpawnPositionStrategy` interface with `EdgeSpawnPositionStrategy`.
-- `data_access`: `InMemoryEnemyWaveDataAccessObject` holds the shared player and the wave.
+- `entity`: `Enemy` (chases a target, stops at first contact, follows an obstacle's edge
+  when the straight step is blocked, can be defeated), `MovementSpace` (the interface `Enemy` asks "may I step here?"; the use case
+  implements it), `EnemyWave` (wave number, living and defeated enemies, `removeEnemy`),
+  `Hitbox` (rectangle geometry: touching, overlapping and separation).
+- `use_case/generate_mob_waves`: `GenerateMobWavesInteractor` (removes defeated enemies once
+  their death animation has had time to play, starts a wave when due, placing a whole wave or
+  none, and moves the living enemies under the movement rules: inside the world, on walkable
+  ground, at least the spacing away from each other) with its input/output boundaries and data,
+  the `GenerateMobWavesDataAccessInterface` (player, wave, and whether an area is walkable),
+  `MobWaveSettings` (first wave size, growth per wave, size, speed, spacing, defeat duration)
+  and the `SpawnPositionStrategy` interface with two implementations:
+  `RandomEdgeSpawnPositionStrategy` (used by the game: random spots 16 to 80 px in from an edge
+  and at least 192 px from the player) and `EdgeSpawnPositionStrategy` (fixed spots, used by
+  tests for repeatable layouts).
+- `data_access`: `InMemoryEnemyWaveDataAccessObject` holds the shared player and the wave, and
+  checks walkability against the loaded `TileMap` (every tile under the area must be walkable).
 - `interface_adapter/enemy_wave`: `EnemyWaveController` (keys -> direction),
   `EnemyWavePresenter` (result -> rounded, immutable `EnemyWaveState`), `EnemyWaveViewModel`.
-- `view`: `EnemyWaveLayer` (draws mobs and the wave heading inside `GamePanel`), `SlimeSprite`
-  (chooses idle/walk frames, fits the art to the hitbox, mirrors it), `SpriteSheet` (loads a
-  classpath PNG strip). Art: `src/main/resources/sprites/` (see `CREDITS.md` there).
+- `view`: `EnemyWaveLayer` (draws mobs, the wave heading and the optional hitbox outlines inside
+  `GamePanel`), `HitboxOverlayKey` (F3 toggles the outlines), `SlimeSprite` (chooses idle, walk
+  or death frames, fits the art to the hitbox, mirrors it), `SpriteSheet` (loads a classpath
+  PNG strip). Art: `src/main/resources/sprites/` (see `CREDITS.md` there).
+- Combat hook (Cast a Spell): `UpdateProjectilesInteractor` calls `Enemy.defeat()` on the first
+  living enemy a projectile reaches. Removing the enemy and starting the next wave stay in
+  Generate Mob Waves.
 
-Tunable defaults (in `Main`): 3 slimes per wave, 56 x 34 px hitbox (the slime art at exactly 2x),
-2 px per tick (half the player's speed), spawned 16 px inside the edges.
+Tunable defaults (in `Main`): 3 slimes in wave 1 and one more in each later wave up to 10, random
+outskirts spawns, a 56 x 34 px hitbox (exactly the area the idle and walk art covers at 2x,
+checked by `SlimeSpriteTest`), 2 px per tick (half the player's speed), at least 2 px between
+slimes, and a defeated slime stays for its 32-tick death animation. `Main` reads the starting map's terrain a second time for the enemies,
+because `MapBuilder` keeps only display data.
 
 ---
 

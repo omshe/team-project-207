@@ -39,6 +39,32 @@ Key presses and mouse strokes are only recorded by the `view` layer. `GameLoop` 
 
 ## Aayaan: first enemy
 
+> **Update (2026-11-23, Aayaan): terrain, no stacking, one-hit defeat.**
+>
+> - **Terrain:** slimes only stand on walkable tiles (dirt). The enemy data access object
+>   checks every tile under a slime's hitbox with Seran's `TileMap.isWalkable`. Spawn spots on
+>   water are skipped.
+> - **No stacking:** living slimes keep at least 2 px apart. When the straight step is blocked,
+>   by water or by another slime, a slime follows the obstacle's edge along the world axes
+>   (turning at its corners) and leaves it only once heading straight can't lead back into the
+>   same corner. That is a local rule rather than A\*, so a route can be a little longer than the
+>   shortest one, and a dead end could still trap a slime. A test checks that, on `level1.txt`, a
+>   lone slime from every spawn spot reaches every reachable player spot. A\* over the map grid
+>   stays a later option.
+> - **Growing waves:** wave n has 3 + (n - 1) slimes, capped at 10.
+> - **Random outskirts spawns:** `RandomEdgeSpawnPositionStrategy` proposes random spots 16 to
+>   80 px in from a random edge (longer edges picked more often) and at least 192 px from the
+>   player; the interactor keeps only walkable, spaced-apart ones. The fixed
+>   `EdgeSpawnPositionStrategy` stays for repeatable tests.
+> - **One-hit defeat (demo):** `UpdateProjectilesInteractor` (Omer's, changed with his OK) calls
+>   `Enemy.defeat()` on the first living enemy a fireball reaches. The defeated slime stops,
+>   plays the pack's 4-frame death animation (32 ticks) and is then removed by Generate Mob
+>   Waves; the next wave starts once every slime has gone. Defeated slimes are not targets and
+>   do not block.
+> - **Hitboxes:** the 56 x 34 hitbox is exactly the area the idle and walk art covers (a test
+>   checks this pixel by pixel). F3 outlines the living slimes' hitboxes in game. The player's
+>   48 x 48 box doesn't match the wizard art; that is tracked in issue #17 for Jordan.
+
 > **Update (2026-11-20, Aayaan): scope changed from one enemy to mob waves.** The course
 > needs each member to own a use case, so this became its own **Generate Mob Waves** use case
 > (`use_case/generate_mob_waves`, README Use Case 2) instead of extra steps inside
@@ -47,8 +73,8 @@ Key presses and mouse strokes are only recorded by the `view` layer. `GameLoop` 
 > - **Waves, not one enemy.** A wave of 3 slimes appears on the player's *first movement*
 >   (not at startup), near the left, right and top edges. Only one wave is active at a time;
 >   the next wave starts once every enemy in the current one has been removed.
-> - **Removal seam for combat:** `EnemyWave.removeEnemy(enemy)`. Nothing calls it yet, so in
->   normal play wave 1 stays on screen. Touching the player does not kill an enemy.
+> - **Removal seam for combat:** `EnemyWave.removeEnemy(enemy)`. Touching the player does not
+>   kill an enemy. (Since 2026-11-23, fireballs defeat enemies; see the update above.)
 > - **Tick order:** `GameLoop` calls the player's controller, then `EnemyWaveController`, then
 >   repaints. A spell step can slot in between without touching either use case.
 > - **Shared pieces delivered:** `entity/Hitbox` (axis-aligned boxes; edges and corners count
@@ -136,7 +162,8 @@ The drawing key and final CNN or $P recognizer remain to be chosen.
 5. On world exit, remove the projectile without an impact event.
 
 Enemy movement leaves the projectile's velocity fixed.
-Health, damage, and enemy defeat remain deferred.
+Since 2026-11-23 the contacted enemy is defeated in one hit for the demo (see Aayaan's update);
+health and damage remain deferred.
 
 ### Animation
 
@@ -183,7 +210,8 @@ Successful recognition supplies a casting request through the same queue.
 - [ ] Movement speed is consistent in every direction.
 - [ ] Flight continues beyond the original aim point.
 - [ ] Collision detection catches enemies crossed between tick positions.
-- [ ] Enemy contact produces exactly one impact event and preserves the enemy.
+- [ ] Enemy contact produces exactly one impact event and defeats exactly one enemy (changed
+  from "preserves the enemy" on 2026-11-23).
 - [ ] World exit produces no impact event.
 - [ ] Flight animation loops and impact animation plays once.
 - [ ] Multiple projectiles and impact animations can coexist.
@@ -328,6 +356,7 @@ Seran confirmed the running-game display and keyboard-focus checks during final 
 - Player-water collision is deferred; this map checkpoint does not change player movement.
 - Enemies should respect water. `TileMap.isWalkable` supplies the terrain rule, and the enemy
   feature must consume it through an appropriate inner-layer dependency, not through the view.
+  (Done 2026-11-23 through `GenerateMobWavesDataAccessInterface.isWalkable`.)
 - Fireballs cross water; terrain walkability must not be used to block their flight.
 - Dirt is a solid green square and water is a solid blue square. Detailed artwork and camera
   behaviour are deferred.

@@ -17,6 +17,7 @@ package view {
   class EnemyWaveLayer
   class SlimeSprite
   class SpriteSheet
+  class HitboxOverlayKey
 }
 
 package data_access {
@@ -38,6 +39,7 @@ package use_case.generate_mob_waves {
   interface SpawnPositionStrategy
   class GenerateMobWavesInteractor
   class EdgeSpawnPositionStrategy
+  class RandomEdgeSpawnPositionStrategy
   class MobWaveSettings
   class GenerateMobWavesInputData
   class GenerateMobWavesOutputData
@@ -49,6 +51,12 @@ package entity {
   class EnemyWave
   class Hitbox
   class Player
+  class TileMap
+  interface MovementSpace
+}
+
+package use_case.cast_spell {
+  class UpdateProjectilesInteractor
 }
 
 ' --- app wires everything ---
@@ -56,7 +64,9 @@ Main ..> GameLoop
 Main ..> InMemoryEnemyWaveDataAccessObject
 Main ..> GenerateMobWavesInteractor
 Main ..> EnemyWavePresenter
-Main ..> EdgeSpawnPositionStrategy
+Main ..> RandomEdgeSpawnPositionStrategy : game uses random spawns
+Main ..> HitboxOverlayKey
+Main ..> TileMap
 GameLoop --> EnemyWaveController
 
 ' --- view reads only the adapter layer ---
@@ -65,11 +75,13 @@ EnemyWaveLayer --> EnemyWaveViewModel
 EnemyWaveLayer --> SlimeSprite
 SlimeSprite --> SpriteSheet
 SlimeSprite ..> EnemyDisplayData
+HitboxOverlayKey --> EnemyWaveLayer
 
 ' --- data access implements the use case's interface ---
 InMemoryEnemyWaveDataAccessObject ..|> GenerateMobWavesDataAccessInterface
 InMemoryEnemyWaveDataAccessObject --> EnemyWave
 InMemoryEnemyWaveDataAccessObject --> Player
+InMemoryEnemyWaveDataAccessObject --> TileMap : isWalkable
 
 ' --- adapters depend on use-case abstractions only ---
 EnemyWaveController --> GenerateMobWavesInputBoundary
@@ -83,17 +95,22 @@ GenerateMobWavesInteractor ..|> GenerateMobWavesInputBoundary
 GenerateMobWavesInteractor --> GenerateMobWavesOutputBoundary
 GenerateMobWavesInteractor --> GenerateMobWavesDataAccessInterface
 GenerateMobWavesInteractor --> SpawnPositionStrategy
-GenerateMobWavesInteractor --> MobWaveSettings
+GenerateMobWavesInteractor --> MobWaveSettings : wave size = first + growth,\ncapped at max
 EdgeSpawnPositionStrategy ..|> SpawnPositionStrategy
+RandomEdgeSpawnPositionStrategy ..|> SpawnPositionStrategy
+note bottom of EdgeSpawnPositionStrategy : fixed spots, used by tests
 GenerateMobWavesOutputData --> EnemyOutputData
 GenerateMobWavesInteractor ..> Enemy
 GenerateMobWavesInteractor ..> EnemyWave
 GenerateMobWavesInteractor ..> Hitbox
 GenerateMobWavesInteractor ..> Player
+GenerateMobWavesInteractor ..> MovementSpace : supplies the rules
+UpdateProjectilesInteractor ..> Enemy : defeat()
 
 ' --- entities depend only on each other ---
 EnemyWave o-- "0..*" Enemy
 Enemy ..> Hitbox
+Enemy ..> MovementSpace
 @enduml
 
 @startuml generate-mob-waves-tick
@@ -114,9 +131,12 @@ note right of GameController : player moves and is clamped first
 GameLoop -> EnemyWaveController : tick(same keys)
 EnemyWaveController -> Interactor : execute(InputData(moveX, moveY))
 Interactor -> DAO : getEnemyWave(), getPlayer()
+Interactor -> Entities : defeated enemies: advanceDefeatTimer();\nremoveEnemy() once the death animation has played
 alt wave due (first move request, or current wave cleared)
-  Interactor -> Strategy : proposeCandidates(...)
-  Interactor -> Interactor : keep valid, non-touching spots
+  Interactor -> Interactor : enemy count = settings.getEnemiesInWave(next wave)
+  Interactor -> Strategy : proposeCandidates(...) (random outskirts spots)
+  Interactor -> DAO : isWalkable(spot)
+  Interactor -> Interactor : keep valid spots (in world, walkable,\nnot on the player, spaced apart)
   alt enough spots for the whole wave
     Interactor -> Entities : startNextWave(new enemies)
   else not enough room (extension 2a)
@@ -125,9 +145,12 @@ alt wave due (first move request, or current wave cleared)
     note over Interactor : retried next tick
   end
 end
-Interactor -> Entities : each enemy.pursue(player hitbox)
+Interactor -> Entities : each living enemy.pursue(player hitbox, movement space)
+Entities -> Interactor : canOccupy(current, next)? (straight step, then sidesteps)
+Interactor -> DAO : isWalkable(next)
 Interactor -> Presenter : prepareSuccessView(OutputData copy)
 Presenter -> EnemyWaveViewModel : setState(new immutable snapshot)
+note over GameLoop : then CastSpellController ticks; a fireball hit\ncalls enemy.defeat() (removed by this use case later)
 GameLoop -> View : repaint() (request only)
 View -> EnemyWaveViewModel : getState() on the Swing thread
 @enduml
