@@ -9,6 +9,10 @@ import java.util.Objects;
 
 /**
  * Advances projectiles and reports the earliest enemy contact before world exit.
+ *
+ * <p>A projectile that reaches an enemy defeats it (a one-hit kill for the MVP demo) and
+ * then disappears. Only the first enemy along its path is hit, and enemies already defeated
+ * are ignored, so they never absorb a second projectile.
  */
 public final class UpdateProjectilesInteractor
         implements UpdateProjectilesInputBoundary {
@@ -75,15 +79,24 @@ public final class UpdateProjectilesInteractor
                             0, worldHeight - start.getHeight()));
 
             double contactTime = Double.POSITIVE_INFINITY;
+            Enemy hitEnemy = null;
 
             for (Enemy enemy : enemies) {
-                contactTime = Math.min(
-                        contactTime,
-                        firstContact(start, deltaX, deltaY, enemy.getHitbox()));
+                // An enemy defeated earlier this tick is no longer a target.
+                if (enemy.isDefeated()) {
+                    continue;
+                }
+                double enemyContactTime =
+                        firstContact(start, deltaX, deltaY, enemy.getHitbox());
+                if (enemyContactTime < contactTime) {
+                    contactTime = enemyContactTime;
+                    hitEnemy = enemy;
+                }
             }
 
-            if (contactTime <= 1 && contactTime <= exitTime) {
+            if (hitEnemy != null && contactTime <= 1 && contactTime <= exitTime) {
                 dataAccess.removeProjectile(projectile);
+                hitEnemy.defeat();
 
                 impacts.add(new ProjectileImpactOutputData(
                         projectile.getSpell().getId(),

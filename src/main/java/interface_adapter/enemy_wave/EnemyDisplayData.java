@@ -2,7 +2,7 @@ package interface_adapter.enemy_wave;
 
 /**
  * Immutable, display-ready values for drawing one enemy: a whole-pixel hitbox plus generic
- * movement and facing flags. The view decides which sprite and animation these flags mean.
+ * movement, facing and defeat values. The view decides which sprite and animation these mean.
  */
 public class EnemyDisplayData {
     private final int left;
@@ -11,6 +11,8 @@ public class EnemyDisplayData {
     private final int height;
     private final boolean moving;
     private final boolean facingLeft;
+    private final boolean defeated;
+    private final int ticksSinceDefeat;
 
     /**
      * Creates the display values.
@@ -21,15 +23,19 @@ public class EnemyDisplayData {
      * @param height hitbox height, in pixels
      * @param moving whether the enemy moved this tick
      * @param facingLeft whether the enemy faces left
+     * @param defeated whether the enemy is defeated and should be drawn fading out
+     * @param ticksSinceDefeat ticks since the defeat, or 0 if not defeated
      */
     public EnemyDisplayData(int left, int top, int width, int height, boolean moving,
-                            boolean facingLeft) {
+                            boolean facingLeft, boolean defeated, int ticksSinceDefeat) {
         this.left = left;
         this.top = top;
         this.width = width;
         this.height = height;
         this.moving = moving;
         this.facingLeft = facingLeft;
+        this.defeated = defeated;
+        this.ticksSinceDefeat = ticksSinceDefeat;
     }
 
     /**
@@ -84,5 +90,23 @@ public class EnemyDisplayData {
      */
     public boolean isFacingLeft() {
         return facingLeft;
+    }
+
+    /**
+     * Returns whether the enemy is defeated.
+     *
+     * @return {@code true} if it should be drawn fading out (it has no hitbox any more)
+     */
+    public boolean isDefeated() {
+        return defeated;
+    }
+
+    /**
+     * Returns the ticks since the defeat, used to pick the death-animation frame.
+     *
+     * @return ticks since the defeat, or 0 if not defeated
+     */
+    public int getTicksSinceDefeat() {
+        return ticksSinceDefeat;
     }
 }

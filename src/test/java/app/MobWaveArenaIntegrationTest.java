@@ -31,6 +31,7 @@ import use_case.generate_mob_waves.MobWaveSettings;
 class MobWaveArenaIntegrationTest {
     private static final int TILE_SIZE = 32;
     private static final double SPACING = 2;
+    private static final int DEFEAT_TICKS = 32;
 
     private TileMap terrain;
     private InMemoryEnemyWaveDataAccessObject dataAccess;
@@ -52,7 +53,7 @@ class MobWaveArenaIntegrationTest {
         interactor = new GenerateMobWavesInteractor(dataAccess,
                 new EnemyWavePresenter(new EnemyWaveViewModel()),
                 new EdgeSpawnPositionStrategy(16),
-                new MobWaveSettings(3, 56, 34, 2, SPACING), 960, 640);
+                new MobWaveSettings(3, 56, 34, 2, SPACING, DEFEAT_TICKS), 960, 640);
     }
 
     private Hitbox playerHitbox() {
@@ -110,6 +111,23 @@ class MobWaveArenaIntegrationTest {
                 }
             }
         }
+    }
+
+    @Test
+    void defeatedWaveFadesForTheDeathAnimationThenNextOneSpawnsOnLand() {
+        interactor.execute(new GenerateMobWavesInputData(1, 0));
+        for (Enemy enemy : wave.getActiveEnemies()) {
+            enemy.defeat();
+        }
+        for (int tick = 1; tick < DEFEAT_TICKS; tick++) {
+            interactor.execute(new GenerateMobWavesInputData(0, 0));
+            assertEquals(1, wave.getWaveNumber());
+            assertEquals(3, wave.getDefeatedEnemies().size());
+        }
+        interactor.execute(new GenerateMobWavesInputData(0, 0));
+        assertEquals(2, wave.getWaveNumber());
+        assertEquals(3, wave.getActiveEnemies().size());
+        assertRulesHold(0, true);
     }
 
     /** Chases a still target with one 56 x 34 slime on the real terrain. */

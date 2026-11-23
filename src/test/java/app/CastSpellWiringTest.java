@@ -1,7 +1,7 @@
 package app;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import data_access.InMemoryCastSpellDataAccessObject;
@@ -109,9 +109,9 @@ class CastSpellWiringTest {
                 castViewModel.getState().getProjectiles().get(0).getCenterX());
     }
 
-    /** Casting sees the same enemies as pursuit and preserves the enemy after contact. */
+    /** Casting sees the same enemies as pursuit, and one hit defeats the enemy it reaches. */
     @Test
-    void enemyContactRemovesFlightAndDeliversOneImpact() throws Exception {
+    void enemyContactRemovesFlightDefeatsTheEnemyAndDeliversOneImpact() throws Exception {
         Enemy enemy = new Enemy(520, 310, 20, 20, 2);
         wave.startNextWave(List.of(enemy));
         press(800, 320);
@@ -126,9 +126,12 @@ class CastSpellWiringTest {
         assertTrue(castViewModel.getState().getProjectiles().isEmpty());
         assertEquals(1, impacts.size());
         assertEquals("fireball", impacts.get(0).getSpellId());
-        assertEquals(1, wave.getActiveEnemies().size());
-        assertSame(enemy, wave.getActiveEnemies().get(0));
+        assertTrue(enemy.isDefeated());
         assertTrue(enemy.getX() < 520);
+        // The defeated enemy is gone (this wiring uses no death animation), so wave 2 began.
+        assertFalse(wave.getRemainingEnemies().contains(enemy));
+        assertEquals(2, wave.getWaveNumber());
+        assertEquals(3, wave.getActiveEnemies().size());
     }
 
     /** Flight passes its original aim point and eventually exits without an impact. */

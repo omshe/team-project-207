@@ -55,6 +55,25 @@ class SupportingClassesTest {
     }
 
     @Test
+    void shortSettingsUseTheDefaultSpacingAndDefeatDuration() {
+        MobWaveSettings settings = new MobWaveSettings(3, 56, 34, 2);
+        assertEquals(MobWaveSettings.DEFAULT_ENEMY_SPACING, settings.getEnemySpacing(), 0);
+        assertEquals(MobWaveSettings.DEFAULT_DEFEAT_DURATION_TICKS,
+                settings.getDefeatDurationTicks());
+        MobWaveSettings full = new MobWaveSettings(3, 56, 34, 2, 4, 32);
+        assertEquals(4, full.getEnemySpacing(), 0);
+        assertEquals(32, full.getDefeatDurationTicks());
+    }
+
+    @Test
+    void settingsRejectNegativeSpacingOrDefeatDuration() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new MobWaveSettings(3, 48, 48, 2, -1, 0));
+        assertThrows(IllegalArgumentException.class,
+                () -> new MobWaveSettings(3, 48, 48, 2, 0, -1));
+    }
+
+    @Test
     void settingsRejectOutOfRangeValues() {
         assertThrows(IllegalArgumentException.class, () -> new MobWaveSettings(0, 48, 48, 2));
         assertThrows(IllegalArgumentException.class, () -> new MobWaveSettings(3, 0, 48, 2));
@@ -72,7 +91,7 @@ class SupportingClassesTest {
     @Test
     void outputDataCopiesTheEnemyListAndIsReadOnly() {
         List<EnemyOutputData> enemies = new ArrayList<>();
-        enemies.add(new EnemyOutputData(1, 2, 3, 4, true, true));
+        enemies.add(new EnemyOutputData(1, 2, 3, 4, true, true, false, 0));
         GenerateMobWavesOutputData output = new GenerateMobWavesOutputData(5, enemies);
         enemies.clear();
 
@@ -87,6 +106,10 @@ class SupportingClassesTest {
         assertEquals(4, enemy.getHeight(), 0);
         assertTrue(enemy.isMoving());
         assertTrue(enemy.isFacingLeft());
-        assertFalse(new EnemyOutputData(0, 0, 1, 1, false, false).isMoving());
+        assertFalse(new EnemyOutputData(0, 0, 1, 1, false, false, false, 0).isMoving());
+        assertFalse(enemy.isDefeated());
+        EnemyOutputData defeated = new EnemyOutputData(0, 0, 1, 1, false, false, true, 9);
+        assertTrue(defeated.isDefeated());
+        assertEquals(9, defeated.getTicksSinceDefeat());
     }
 }

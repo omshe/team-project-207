@@ -6,13 +6,18 @@ import java.util.List;
 
 /**
  * The state of the mob-wave encounter: which wave number the player is on and which enemies of
- * that wave are still active.
+ * that wave remain.
+ *
+ * <p>A remaining enemy is either <b>active</b> (alive: it chases the player and can be hit) or
+ * <b>defeated</b> (still shown while it fades out, but it no longer chases, blocks or can be
+ * hit). An enemy leaves the wave only through {@link #removeEnemy(Enemy)}.
  *
  * <p>The encounter goes through these states:
  * <ol>
  *   <li><b>Not started</b>: wave number 0 and no enemies. Once the player triggers the
  *       encounter ({@link #triggerEncounter()}), the first wave is due until it starts.</li>
- *   <li><b>Active</b>: a wave has started and at least one of its enemies remains.</li>
+ *   <li><b>Active</b>: a wave has started and at least one of its enemies remains, alive
+ *       or defeated.</li>
  *   <li><b>Cleared</b>: a wave has started and all of its enemies have been removed. The next
  *       wave may then start, which makes the encounter active again.</li>
  * </ol>
@@ -20,12 +25,12 @@ import java.util.List;
  * <p>Invariant: at most one wave is active at a time. {@link #startNextWave(List)} refuses to
  * start a wave while another is active.
  *
- * <p><b>Removal seam for combat.</b> {@link #removeEnemy(Enemy)} is how a future combat
- * feature (for example a spell hitting a mob) reports that an enemy was defeated. Nothing in
- * the current game calls it; touching the player does not remove an enemy.
+ * <p><b>Defeat and removal.</b> Combat defeats an enemy with {@link Enemy#defeat()}; the
+ * mob-wave use case later removes it with {@link #removeEnemy(Enemy)}. Touching the player
+ * never defeats or removes an enemy.
  */
 public class EnemyWave {
-    private final List<Enemy> activeEnemies = new ArrayList<>();
+    private final List<Enemy> enemies = new ArrayList<>();
     private int waveNumber;
     private boolean encounterTriggered;
 
@@ -61,10 +66,11 @@ public class EnemyWave {
     /**
      * Returns whether a wave is in progress.
      *
-     * @return {@code true} if a wave has started and has at least one enemy left
+     * @return {@code true} if a wave has started and has at least one enemy left, alive or
+     *     defeated
      */
     public boolean isActive() {
-        return hasStarted() && !activeEnemies.isEmpty();
+        return hasStarted() && !enemies.isEmpty();
     }
 
     /**
@@ -73,7 +79,7 @@ public class EnemyWave {
      * @return {@code true} if a wave has started and none of its enemies remain
      */
     public boolean isCleared() {
-        return hasStarted() && activeEnemies.isEmpty();
+        return hasStarted() && enemies.isEmpty();
     }
 
     /**
@@ -92,22 +98,22 @@ public class EnemyWave {
         if (enemies.isEmpty()) {
             throw new IllegalArgumentException("A wave needs at least one enemy");
         }
-        activeEnemies.addAll(enemies);
+        this.enemies.addAll(enemies);
         waveNumber = waveNumber + 1;
     }
 
     /**
-     * Removes a defeated enemy from the current wave (the seam for future combat).
+     * Removes an enemy from the current wave, normally once its defeat has played out.
      *
      * <p>Enemies are matched by identity, so pass the same object returned by
-     * {@link #getActiveEnemies()}.
+     * {@link #getActiveEnemies()} or {@link #getDefeatedEnemies()}.
      *
      * @param enemy the enemy to remove
      * @return {@code true} if it was active and is now removed; {@code false} if it was not in
      *     the current wave
      */
     public boolean removeEnemy(Enemy enemy) {
-        return activeEnemies.remove(enemy);
+        return enemies.remove(enemy);
     }
 
     /**
@@ -120,17 +126,47 @@ public class EnemyWave {
     }
 
     /**
-     * Returns the enemies still active in the current wave, for use-case code that updates
-     * them.
+     * Returns the living enemies of the current wave, for use-case code that moves them or
+     * checks hits against them.
      *
      * <p>The returned list is a read-only copy: adding or removing through it is impossible,
      * so callers must use {@link #removeEnemy(Enemy)}. The enemies themselves are the live,
      * mutable entities, so this list must never be handed to the view; outer layers receive
      * immutable copies of their values instead.
      *
-     * @return an unmodifiable snapshot of the active enemies, in spawn order
+     * @return an unmodifiable snapshot of the enemies that are not defeated, in spawn order
      */
     public List<Enemy> getActiveEnemies() {
-        return Collections.unmodifiableList(new ArrayList<>(activeEnemies));
+        List<Enemy> active = new ArrayList<>();
+        for (Enemy enemy : enemies) {
+            if (!enemy.isDefeated()) {
+                active.add(enemy);
+            }
+        }
+        return Collections.unmodifiableList(active);
+    }
+
+    /**
+     * Returns the defeated enemies that have not been removed yet.
+     *
+     * @return an unmodifiable snapshot of the defeated enemies, in spawn order
+     */
+    public List<Enemy> getDefeatedEnemies() {
+        List<Enemy> defeated = new ArrayList<>();
+        for (Enemy enemy : enemies) {
+            if (enemy.isDefeated()) {
+                defeated.add(enemy);
+            }
+        }
+        return Collections.unmodifiableList(defeated);
+    }
+
+    /**
+     * Returns every enemy still in the current wave, alive or defeated, for presenting.
+     *
+     * @return an unmodifiable snapshot of the remaining enemies, in spawn order
+     */
+    public List<Enemy> getRemainingEnemies() {
+        return Collections.unmodifiableList(new ArrayList<>(enemies));
     }
 }

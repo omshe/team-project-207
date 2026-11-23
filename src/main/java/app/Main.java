@@ -104,13 +104,15 @@ public class Main {
         final GameController controller = new GameController(updateGame);
 
         // Generate Mob Waves: shares the same player object, so enemies chase where it really is.
+        // A defeated slime stays exactly as long as its death animation takes to play once.
+        SlimeSprite slimeSprite = new SlimeSprite();
         EnemyWaveViewModel enemyWaveViewModel = new EnemyWaveViewModel();
         GenerateMobWavesInteractor generateMobWaves = new GenerateMobWavesInteractor(
                 new InMemoryEnemyWaveDataAccessObject(player, enemyWave, enemyTerrain),
                 new EnemyWavePresenter(enemyWaveViewModel),
                 new EdgeSpawnPositionStrategy(SPAWN_EDGE_MARGIN),
                 new MobWaveSettings(ENEMIES_PER_WAVE, ENEMY_WIDTH, ENEMY_HEIGHT, ENEMY_SPEED,
-                        ENEMY_SPACING),
+                        ENEMY_SPACING, slimeSprite.getDeathAnimationTicks()),
                 SCREEN_WIDTH, SCREEN_HEIGHT);
         final EnemyWaveController enemyWaveController = new EnemyWaveController(generateMobWaves);
 
@@ -129,7 +131,7 @@ public class Main {
 
         // Frameworks: Swing window, input, loop
         KeyboardInput keyboard = new KeyboardInput();
-        EnemyWaveLayer enemyWaveLayer = new EnemyWaveLayer(enemyWaveViewModel, new SlimeSprite());
+        EnemyWaveLayer enemyWaveLayer = new EnemyWaveLayer(enemyWaveViewModel, slimeSprite);
         ProjectileLayer projectileLayer = new ProjectileLayer(castSpellViewModel,
                 Map.of(fireball.getId(), new FireballSprite()));
         GamePanel panel = new GamePanel(viewModel, PlayerSprite.wizard(), mapLayer, enemyWaveLayer,

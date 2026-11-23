@@ -571,6 +571,21 @@ class GenerateMobWavesInteractorTest {
     }
 
     @Test
+    void defeatedSlimesDoNotBlockLivingOnes() {
+        Enemy corpse = new Enemy(408, 296, 48, 48, ENEMY_SPEED);
+        Enemy walker = new Enemy(300, 296, 48, 48, ENEMY_SPEED);
+        interactor = interactorWith(new EdgeSpawnPositionStrategy(16),
+                new MobWaveSettings(3, 48, 48, ENEMY_SPEED, 2, 1000), WORLD_WIDTH, WORLD_HEIGHT);
+        wave.startNextWave(List.of(corpse, walker));
+        corpse.defeat();
+        idleTicks(60);
+        // The walker went straight through the corpse's spot to the player.
+        assertTrue(walker.getHitbox().touches(playerHitbox()));
+        assertEquals(408, walker.getX(), 1e-6);
+        assertEquals(296, walker.getY(), 1e-6);
+    }
+
+    @Test
     void spawnSkipsSpotsCloserThanTheSpacingToChosenSpot() {
         ScriptedStrategy strategy = new ScriptedStrategy();
         strategy.thenReturn(spots(new Hitbox(16, 16, 48, 48), new Hitbox(65, 16, 48, 48),
@@ -636,5 +651,62 @@ class GenerateMobWavesInteractorTest {
             tick(0, 0);
             assertTrue(slime.getHitbox().isInsideWorld(WORLD_WIDTH, WORLD_HEIGHT));
         }
+    }
+
+    // ----- Defeat: shown for the defeat duration, then removed -----
+
+    @Test
+    void defeatedSlimesStayForTheDefeatDurationThenTheNextWaveStarts() {
+        interactor = interactorWith(new EdgeSpawnPositionStrategy(16),
+                new MobWaveSettings(3, 48, 48, ENEMY_SPEED, 2, 5), WORLD_WIDTH, WORLD_HEIGHT);
+        tick(1, 0);
+        List<Enemy> firstWave = wave.getActiveEnemies();
+        for (Enemy enemy : firstWave) {
+            enemy.defeat();
+        }
+
+        for (int shown = 1; shown <= 4; shown++) {
+            tick(0, 0);
+            assertEquals(1, wave.getWaveNumber());
+            assertTrue(wave.getActiveEnemies().isEmpty());
+            assertEquals(3, presenter.lastOutput.getEnemies().size());
+            EnemyOutputData output = presenter.lastOutput.getEnemies().get(0);
+            assertTrue(output.isDefeated());
+            assertFalse(output.isMoving());
+            assertEquals(shown, output.getTicksSinceDefeat());
+        }
+
+        tick(0, 0);
+        assertEquals(2, wave.getWaveNumber());
+        for (Enemy enemy : firstWave) {
+            assertFalse(wave.getRemainingEnemies().contains(enemy));
+        }
+        assertEquals(3, presenter.lastOutput.getEnemies().size());
+        assertFalse(presenter.lastOutput.getEnemies().get(0).isDefeated());
+    }
+
+    @Test
+    void defeatedSlimesStopMoving() {
+        tick(1, 0);
+        Enemy enemy = wave.getActiveEnemies().get(0);
+        enemy.defeat();
+        double x = enemy.getX();
+        double y = enemy.getY();
+        tick(1, 0);
+        assertEquals(x, enemy.getX(), 0);
+        assertEquals(y, enemy.getY(), 0);
+    }
+
+    @Test
+    void theWaveStaysActiveWhileAnyDefeatedSlimeIsStillFading() {
+        interactor = interactorWith(new EdgeSpawnPositionStrategy(16),
+                new MobWaveSettings(1, 48, 48, ENEMY_SPEED, 2, 10), WORLD_WIDTH, WORLD_HEIGHT);
+        tick(1, 0);
+        wave.getActiveEnemies().get(0).defeat();
+        idleTicks(9);
+        assertTrue(wave.isActive());
+        assertEquals(1, wave.getWaveNumber());
+        tick(0, 0);
+        assertEquals(2, wave.getWaveNumber());
     }
 }

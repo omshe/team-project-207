@@ -1,7 +1,7 @@
 package entity;
 
 /**
- * A basic enemy (mob) that chases a target and stops when it reaches it.
+ * A basic enemy (mob) that chases a target, stops when it reaches it, and can be defeated.
  *
  * <p>An enemy has a position (top-left corner of its hitbox, in pixels), a fixed hitbox size
  * and a speed in <b>pixels per tick</b>. It knows nothing about sprites, the screen or input;
@@ -41,6 +41,10 @@ package entity;
  * simple local rule, not full pathfinding: routes can be longer than the shortest one, an
  * enemy may circle an obstacle when the target is unreachable, and a dead end can still trap
  * it.
+ *
+ * <p><b>Defeat.</b> {@link #defeat()} is one-way. A defeated enemy never moves again and only
+ * counts the ticks since its defeat, so the use case can decide when to remove it (for example,
+ * after a death animation).
  */
 public class Enemy {
     /** Halvings used to find the longest allowed part of a blocked step. */
@@ -67,6 +71,8 @@ public class Enemy {
     private int wallY;
     /** Distance to the target's centre when it started following. */
     private double distanceWhenBlocked;
+    private boolean defeated;
+    private int ticksSinceDefeat;
 
     /**
      * Creates an enemy that starts still and facing right.
@@ -106,7 +112,7 @@ public class Enemy {
 
     /**
      * Moves one tick toward the target, going around anything the space forbids (see the class
-     * contract).
+     * contract). A defeated enemy does not move.
      *
      * <p>Afterwards {@link #isMoving()} reports whether the enemy actually moved this tick, and
      * {@link #isFacingLeft()} reports the horizontal direction of its latest movement.
@@ -116,6 +122,9 @@ public class Enemy {
      */
     public void pursue(Hitbox target, MovementSpace space) {
         moving = false;
+        if (defeated) {
+            return;
+        }
         Hitbox current = getHitbox();
         double deltaX = target.getCenterX() - current.getCenterX();
         double deltaY = target.getCenterY() - current.getCenterY();
@@ -358,6 +367,46 @@ public class Enemy {
     }
 
     /**
+     * Defeats this enemy. It stops moving at once and never moves again. Calling this again
+     * has no further effect, so the defeat timer is not restarted.
+     */
+    public void defeat() {
+        if (defeated) {
+            return;
+        }
+        defeated = true;
+        moving = false;
+        followingObstacle = false;
+        ticksSinceDefeat = 0;
+    }
+
+    /**
+     * Returns whether this enemy has been defeated.
+     *
+     * @return {@code true} once {@link #defeat()} has been called
+     */
+    public boolean isDefeated() {
+        return defeated;
+    }
+
+    /** Counts one more tick since the defeat. Does nothing if the enemy is not defeated. */
+    public void advanceDefeatTimer() {
+        if (defeated) {
+            ticksSinceDefeat = ticksSinceDefeat + 1;
+        }
+    }
+
+    /**
+     * Returns how many ticks have been counted since the defeat.
+     *
+     * @return 0 when not defeated or just defeated, then 1, 2, ... per
+     *     {@link #advanceDefeatTimer()} call
+     */
+    public int getTicksSinceDefeat() {
+        return ticksSinceDefeat;
+    }
+
+    /**
      * Returns this enemy's current hitbox.
      *
      * @return a new immutable hitbox at the current position
@@ -415,7 +464,7 @@ public class Enemy {
      * Returns whether the enemy moved during its latest pursue call.
      *
      * @return {@code true} if it moved; {@code false} if it was touching the target, was
-     *     blocked in every direction, or has not pursued yet
+     *     blocked in every direction, is defeated, or has not pursued yet
      */
     public boolean isMoving() {
         return moving;

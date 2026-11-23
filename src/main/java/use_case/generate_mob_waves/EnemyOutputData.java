@@ -13,6 +13,8 @@ public class EnemyOutputData {
     private final double height;
     private final boolean moving;
     private final boolean facingLeft;
+    private final boolean defeated;
+    private final int ticksSinceDefeat;
 
     /**
      * Creates the enemy's output values.
@@ -23,15 +25,20 @@ public class EnemyOutputData {
      * @param height hitbox height, in pixels
      * @param moving whether the enemy moved this tick
      * @param facingLeft whether the enemy's latest horizontal movement was to the left
+     * @param defeated whether the enemy has been defeated and is fading out
+     * @param ticksSinceDefeat ticks since the defeat, or 0 if not defeated
      */
     public EnemyOutputData(double left, double top, double width, double height,
-                           boolean moving, boolean facingLeft) {
+                           boolean moving, boolean facingLeft, boolean defeated,
+                           int ticksSinceDefeat) {
         this.left = left;
         this.top = top;
         this.width = width;
         this.height = height;
         this.moving = moving;
         this.facingLeft = facingLeft;
+        this.defeated = defeated;
+        this.ticksSinceDefeat = ticksSinceDefeat;
     }
 
     /**
@@ -86,5 +93,23 @@ public class EnemyOutputData {
      */
     public boolean isFacingLeft() {
         return facingLeft;
+    }
+
+    /**
+     * Returns whether the enemy has been defeated.
+     *
+     * @return {@code true} if it is defeated and fading out
+     */
+    public boolean isDefeated() {
+        return defeated;
+    }
+
+    /**
+     * Returns the ticks since the defeat.
+     *
+     * @return ticks since the defeat, or 0 if not defeated
+     */
+    public int getTicksSinceDefeat() {
+        return ticksSinceDefeat;
     }
 }
