@@ -451,14 +451,15 @@ The map MVP is implemented and verified, including startup and game-panel integr
 - `entity/TileMap`: an immutable grid of terrain objects, pixel-coordinate lookup and walkability (no Swing or file access).
 - `use_case/load_map`: `LoadMapInputBoundary` and immutable `LoadMapInputData` accept a map name. `LoadMapInteractor` loads through `MapDataAccessInterface`, then sends an immutable `LoadMapOutputData` snapshot of tile IDs and tile size through `LoadMapOutputBoundary`. Invalid names and `MapLoadingException` failures go through the fail output; the input boundary returns `void`.
 - `data_access/FileMapDataAccessObject`: loads UTF-8 resources from `maps/`, resolves IDs through the supplied terrain registry, and validates the tile grid.
+- `data_access/CachingMapDataAccessObject`: a decorator over any `MapDataAccessInterface` that remembers each successfully loaded map by name, so a map file is read once per startup and every caller gets the same `TileMap`. Failed loads are not remembered.
 - `interface_adapter/map`: `MapController` wraps the map name; `MapPresenter` converts success or failure into immutable `MapState`. `MapViewModel` stores that state and fires a `state` property-change notification. The map state contains IDs, dimensions and error text, with no entities, images or file APIs. A failed load preserves the previous map; success clears the error.
 - `view/TileImageSource`: the view-only contract for looking up already loaded images by terrain ID. This is a rendering helper interface, not a use-case boundary.
 - `view/TileSprites`: loads an injected mapping of IDs to classpath image resources once and checks their dimensions. Missing, unreadable or incorrectly sized images produce an `IOException` with the resource path; `MapBuilder` reports it through the startup error callback.
 - `view/MapRenderer`: depends on `TileImageSource` and reads only `MapState`. It builds a cached image at the map's pixel dimensions, rebuilds when the grid or tile size changes, and preserves the last complete image if rendering fails. Loading/rendering error text is available through `getErrorMessage()`.
 - `view/MapLayer`: reads `MapViewModel`, draws the cached background at the top-left, and wraps error text into a banner. `GamePanel` receives the map, enemy-wave and projectile layers plus the player sprite. It draws terrain, enemies, the wizard, projectiles and then any map error. It subscribes to map changes while displayed and removes its listener when detached.
 - `view/GameWindow.showStartupError`: displays a failure dialog before a playable window is opened.
-- `app/MapBuilder`: wires the map registry, file reader, use case, presenter and renderer; requests the starting map through `MapController`; and returns a prepared `MapLayer`. A map or image failure reports one error and returns no layer.
-- `app/Main`: supplies `level1.txt`, tile size 32 and the image mappings to `MapBuilder`. It opens the window and starts the existing loop only after map preparation succeeds.
+- `app/MapBuilder`: owns the one terrain-registry definition (`standardTileTypes()`) and wires a map source (by default the file reader), use case, presenter and renderer; requests the starting map through `MapController`; and returns a prepared `MapLayer`. A map or image failure reports one error and returns no layer.
+- `app/Main`: supplies `level1.txt`, tile size 32, the image mappings and one shared caching map source to `MapBuilder`, then reuses that already loaded map for the enemies' walkability checks. It opens the window and starts the existing loop only after map preparation succeeds.
 
 The map flow is separate from per-tick player updates. Interactor tests use in-memory data
 access; an integration test connects the real file reader, controller, interactor, presenter
@@ -547,8 +548,9 @@ Runs every tick right after the player moves, as its own use case.
 Tunable defaults (in `Main`): 3 slimes in wave 1 and one more in each later wave up to 10, random
 outskirts spawns, a 56 x 34 px hitbox (exactly the area the idle and walk art covers at 2x,
 checked by `SlimeSpriteTest`), 2 px per tick (half the player's speed), at least 2 px between
-slimes, and a defeated slime stays for its 32-tick death animation. `Main` reads the starting map's terrain a second time for the enemies,
-because `MapBuilder` keeps only display data.
+slimes, and a defeated slime stays for its 32-tick death animation. The enemies use the same
+loaded `TileMap` that is drawn: `Main` reads `level1.txt` once through a
+`CachingMapDataAccessObject`, and `MapBuilder` and the enemy terrain checks share it.
 
 ---
 
