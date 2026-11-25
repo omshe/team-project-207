@@ -177,7 +177,7 @@ class GamePanelTest {
             int repaintCount = panel.repaints;
 
             enemies.setState(new EnemyWaveState("", "",
-                    List.of(new EnemyDisplayData(0, 32, 56, 34, false, false)), 0));
+                    List.of(new EnemyDisplayData(0, 32, 56, 34, false, false, false, 0)), 0));
 
             assertEquals(repaintCount + 1, panel.repaints);
             BufferedImage after = paint(panel);

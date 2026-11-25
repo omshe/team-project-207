@@ -7,11 +7,12 @@ import java.util.List;
  * Proposes where a wave's enemies could be placed (Strategy pattern).
  *
  * <p>The interactor asks a strategy for candidate spots and then applies the placement rules
- * itself: a candidate is used only if it is fully inside the world and does not touch the
- * player or an enemy already placed. A strategy therefore only decides <em>where to look</em>,
- * never <em>what counts as valid</em>. That keeps the rules in one place while letting new
- * placement styles (random spots, spawn points read from a map, spots around the player in a
- * larger scrolling world) be added as new classes without editing the interactor.
+ * itself: a candidate is used only if it is fully inside the world, on walkable ground, does
+ * not touch the player, and is spaced apart from the enemies already placed. A strategy
+ * therefore only decides <em>where to look</em>, never <em>what counts as valid</em>. That
+ * keeps the rules in one place while letting new placement styles (random spots, spawn points
+ * read from a map, spots around the player in a larger scrolling world) be added as new
+ * classes without editing the interactor.
  *
  * <p>Contract: the returned list is finite, so the interactor's search always ends. It may
  * contain invalid or overlapping candidates; those are simply skipped. It may be empty.

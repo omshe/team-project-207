@@ -1,6 +1,7 @@
 package use_case.generate_mob_waves;
 
 import entity.EnemyWave;
+import entity.Hitbox;
 import entity.Player;
 
 /**
@@ -24,4 +25,13 @@ public interface GenerateMobWavesDataAccessInterface {
      * @return the session's single enemy wave
      */
     EnemyWave getEnemyWave();
+
+    /**
+     * Returns whether every bit of the given area is on walkable terrain, so an enemy may stand
+     * there. Areas reaching outside the terrain are not walkable.
+     *
+     * @param area the hitbox an enemy would occupy
+     * @return {@code true} if the whole area is walkable
+     */
+    boolean isWalkable(Hitbox area);
 }

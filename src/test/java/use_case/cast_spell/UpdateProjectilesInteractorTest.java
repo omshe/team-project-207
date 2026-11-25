@@ -1,6 +1,7 @@
 package use_case.cast_spell;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -114,6 +115,9 @@ class UpdateProjectilesInteractorTest {
         assertEquals(38,
                 presenter.result.getImpacts().get(0).getX(), TOLERANCE);
         assertEquals(2, dataAccess.enemies.size());
+        // Only the nearer enemy is defeated.
+        assertFalse(dataAccess.enemies.get(0).isDefeated());
+        assertTrue(dataAccess.enemies.get(1).isDefeated());
 
         interactor.execute();
 
@@ -134,6 +138,43 @@ class UpdateProjectilesInteractorTest {
         assertEquals(1, presenter.result.getImpacts().size());
         assertTrue(dataAccess.projectiles.isEmpty());
         assertEquals(2, dataAccess.enemies.size());
+        // One projectile defeats exactly one enemy: the first in list order on a tie.
+        assertTrue(dataAccess.enemies.get(0).isDefeated());
+        assertFalse(dataAccess.enemies.get(1).isDefeated());
+    }
+
+    /**
+     * Verifies that a defeated enemy is no longer a target, so projectiles pass through it.
+     */
+    @Test
+    void defeatedEnemiesAreIgnored() {
+        Enemy defeated = new Enemy(50, 10, 10, 10, 2);
+        defeated.defeat();
+        dataAccess.enemies.add(defeated);
+        dataAccess.projectiles.add(projectile(10, 10, 80, 0));
+
+        interactor.execute();
+
+        assertTrue(presenter.result.getImpacts().isEmpty());
+        assertEquals(1, dataAccess.projectiles.size());
+    }
+
+    /**
+     * Verifies that two projectiles reaching one enemy in the same tick defeat it only once;
+     * the second one keeps flying.
+     */
+    @Test
+    void secondProjectileInTheSameTickPassesTheJustDefeatedEnemy() {
+        Enemy enemy = new Enemy(50, 10, 10, 10, 2);
+        dataAccess.enemies.add(enemy);
+        dataAccess.projectiles.add(projectile(10, 10, 80, 0));
+        dataAccess.projectiles.add(projectile(10, 12, 80, 0));
+
+        interactor.execute();
+
+        assertTrue(enemy.isDefeated());
+        assertEquals(1, presenter.result.getImpacts().size());
+        assertEquals(1, dataAccess.projectiles.size());
     }
 
     /**

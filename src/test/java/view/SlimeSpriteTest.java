@@ -1,6 +1,7 @@
 package view;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -50,7 +51,7 @@ class SlimeSpriteTest {
         for (boolean facingLeft : new boolean[] {false, true}) {
             for (boolean moving : new boolean[] {false, true}) {
                 EnemyDisplayData enemy = new EnemyDisplayData(100, 100, 56, 34, moving,
-                        facingLeft);
+                        facingLeft, false, 0);
                 Rectangle drawn = drawAndMeasure(sprite, enemy);
                 // Every visible pixel stays inside the hitbox ...
                 assertTrue(new Rectangle(100, 100, 56, 34).contains(drawn),
@@ -66,7 +67,7 @@ class SlimeSpriteTest {
         SlimeSprite sprite = new SlimeSprite();
         BufferedImage canvas = new BufferedImage(400, 400, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = canvas.createGraphics();
-        sprite.draw(graphics, new EnemyDisplayData(100, 100, 56, 34, false, false), 0);
+        sprite.draw(graphics, new EnemyDisplayData(100, 100, 56, 34, false, false, false, 0), 0);
         graphics.dispose();
         assertEquals(0, canvas.getRGB(5, 5) >>> 24);
         assertEquals(0, canvas.getRGB(100, 60) >>> 24);
@@ -74,10 +75,13 @@ class SlimeSpriteTest {
 
     /** Draws one enemy on a blank transparent canvas and returns the box of opaque pixels. */
     private static Rectangle drawAndMeasure(SlimeSprite sprite, EnemyDisplayData enemy) {
-        BufferedImage canvas = new BufferedImage(400, 400, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D graphics = canvas.createGraphics();
-        sprite.draw(graphics, enemy, 0);
-        graphics.dispose();
+        return drawAndMeasure(sprite, enemy, 0);
+    }
+
+    /** Same as above, drawing the frame for the given animation tick. */
+    private static Rectangle drawAndMeasure(SlimeSprite sprite, EnemyDisplayData enemy,
+                                            long tick) {
+        BufferedImage canvas = render(sprite, enemy, tick);
 
         Rectangle bounds = null;
         for (int pixelY = 0; pixelY < canvas.getHeight(); pixelY++) {
@@ -94,5 +98,72 @@ class SlimeSpriteTest {
             }
         }
         return bounds;
+    }
+
+    @Test
+    void everyIdleAndWalkFrameTogetherFillTheHitboxExactly() {
+        // The hitbox should be what you see: the union of the slime's drawn pixels over all
+        // idle and walk frames, both facings, is exactly the 56 x 34 hitbox.
+        SlimeSprite sprite = new SlimeSprite();
+        Rectangle drawnUnion = null;
+        for (boolean facingLeft : new boolean[] {false, true}) {
+            for (boolean moving : new boolean[] {false, true}) {
+                for (long tick = 0; tick < 6 * SlimeSprite.TICKS_PER_FRAME;
+                        tick += SlimeSprite.TICKS_PER_FRAME) {
+                    Rectangle drawn = drawAndMeasure(sprite,
+                            new EnemyDisplayData(100, 100, 56, 34, moving, facingLeft, false, 0),
+                            tick);
+                    if (drawnUnion == null) {
+                        drawnUnion = drawn;
+                    } else {
+                        drawnUnion = drawnUnion.union(drawn);
+                    }
+                }
+            }
+        }
+        assertEquals(new Rectangle(100, 100, 56, 34), drawnUnion);
+    }
+
+    @Test
+    void deathSheetHasFourFramesAndLastsThatManyFrameLengths() {
+        SpriteSheet death = new SpriteSheet("/sprites/enemy/slime/slime-death.png", 100, 100);
+        assertEquals(4, death.getFrameCount());
+        assertEquals(4 * SlimeSprite.TICKS_PER_FRAME, new SlimeSprite().getDeathAnimationTicks());
+    }
+
+    @Test
+    void defeatedSlimePlaysTheDeathFramesOnceThenHoldsTheLast() {
+        SlimeSprite sprite = new SlimeSprite();
+        BufferedImage alive = render(sprite,
+                new EnemyDisplayData(100, 100, 56, 34, false, false, false, 0), 0);
+        BufferedImage firstDeathFrame = render(sprite,
+                new EnemyDisplayData(100, 100, 56, 34, false, false, true, 0), 0);
+        BufferedImage lastDeathFrame = render(sprite, new EnemyDisplayData(100, 100, 56, 34,
+                false, false, true, 3 * SlimeSprite.TICKS_PER_FRAME), 0);
+        BufferedImage longAfter = render(sprite,
+                new EnemyDisplayData(100, 100, 56, 34, false, false, true, 1000), 0);
+
+        assertFalse(samePixels(alive, firstDeathFrame), "death art differs from idle art");
+        assertFalse(samePixels(firstDeathFrame, lastDeathFrame));
+        assertTrue(samePixels(lastDeathFrame, longAfter), "holds the last frame, no looping");
+    }
+
+    private static BufferedImage render(SlimeSprite sprite, EnemyDisplayData enemy, long tick) {
+        BufferedImage canvas = new BufferedImage(400, 400, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = canvas.createGraphics();
+        sprite.draw(graphics, enemy, tick);
+        graphics.dispose();
+        return canvas;
+    }
+
+    private static boolean samePixels(BufferedImage first, BufferedImage second) {
+        for (int pixelY = 0; pixelY < first.getHeight(); pixelY++) {
+            for (int pixelX = 0; pixelX < first.getWidth(); pixelX++) {
+                if (first.getRGB(pixelX, pixelY) != second.getRGB(pixelX, pixelY)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

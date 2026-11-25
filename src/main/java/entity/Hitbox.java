@@ -57,6 +57,32 @@ public final class Hitbox {
     }
 
     /**
+     * Returns whether this hitbox shares interior area with another one. Unlike
+     * {@link #touches(Hitbox)}, boxes that only share an edge or a corner do not overlap.
+     *
+     * @param other the other hitbox
+     * @return {@code true} if the boxes overlap by more than {@link #CONTACT_TOLERANCE} on both
+     *     axes
+     */
+    public boolean overlaps(Hitbox other) {
+        boolean overlapHorizontally = horizontalGapTo(other) < -CONTACT_TOLERANCE;
+        boolean overlapVertically = verticalGapTo(other) < -CONTACT_TOLERANCE;
+        return overlapHorizontally && overlapVertically;
+    }
+
+    /**
+     * Returns the separation between this hitbox and another: the larger of the two per-axis
+     * gaps. Two boxes are at least {@code d} pixels apart exactly when this is at least
+     * {@code d}, because separating on one axis is enough to keep axis-aligned boxes apart.
+     *
+     * @param other the other hitbox
+     * @return the separation in pixels; zero or negative when the boxes touch or overlap
+     */
+    public double separationFrom(Hitbox other) {
+        return Math.max(horizontalGapTo(other), verticalGapTo(other));
+    }
+
+    /**
      * Returns the empty horizontal space between this hitbox and another.
      *
      * @param other the other hitbox

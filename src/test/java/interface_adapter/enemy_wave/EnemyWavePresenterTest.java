@@ -33,7 +33,7 @@ class EnemyWavePresenterTest {
     @Test
     void successRoundsPositionsAndCopiesFlags() {
         presenter.prepareSuccessView(output(1,
-                new EnemyOutputData(10.4, 20.6, 56, 34, true, true)));
+                new EnemyOutputData(10.4, 20.6, 56, 34, true, true, false, 0)));
 
         EnemyDisplayData enemy = viewModel.getState().getEnemies().get(0);
         assertEquals(10, enemy.getX());
@@ -76,10 +76,12 @@ class EnemyWavePresenterTest {
 
     @Test
     void earlierSnapshotsNeverChange() {
-        presenter.prepareSuccessView(output(1, new EnemyOutputData(5, 5, 10, 10, true, false)));
+        presenter.prepareSuccessView(output(1,
+                new EnemyOutputData(5, 5, 10, 10, true, false, false, 0)));
         EnemyWaveState first = viewModel.getState();
 
-        presenter.prepareSuccessView(output(1, new EnemyOutputData(9, 9, 10, 10, false, true)));
+        presenter.prepareSuccessView(output(1,
+                new EnemyOutputData(9, 9, 10, 10, false, true, false, 0)));
         EnemyWaveState second = viewModel.getState();
 
         assertNotSame(first, second);
@@ -92,11 +94,25 @@ class EnemyWavePresenterTest {
     @Test
     void stateCopiesItsListAndIsReadOnly() {
         List<EnemyDisplayData> enemies = new ArrayList<>();
-        enemies.add(new EnemyDisplayData(1, 2, 3, 4, false, false));
+        enemies.add(new EnemyDisplayData(1, 2, 3, 4, false, false, false, 0));
         EnemyWaveState state = new EnemyWaveState("Wave 1", "", enemies, 7);
         enemies.clear();
 
         assertEquals(1, state.getEnemies().size());
         assertThrows(UnsupportedOperationException.class, () -> state.getEnemies().clear());
+    }
+
+    @Test
+    void passesDefeatValuesThroughUnchanged() {
+        EnemyWaveViewModel viewModel = new EnemyWaveViewModel();
+        EnemyWavePresenter presenter = new EnemyWavePresenter(viewModel);
+        presenter.prepareSuccessView(new GenerateMobWavesOutputData(1, List.of(
+                new EnemyOutputData(5, 5, 10, 10, false, true, true, 7),
+                new EnemyOutputData(50, 5, 10, 10, true, false, false, 0))));
+
+        EnemyDisplayData defeated = viewModel.getState().getEnemies().get(0);
+        assertTrue(defeated.isDefeated());
+        assertEquals(7, defeated.getTicksSinceDefeat());
+        assertFalse(viewModel.getState().getEnemies().get(1).isDefeated());
     }
 }

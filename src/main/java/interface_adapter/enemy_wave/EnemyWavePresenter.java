@@ -46,7 +46,9 @@ public class EnemyWavePresenter implements GenerateMobWavesOutputBoundary {
                     (int) Math.round(enemy.getWidth()),
                     (int) Math.round(enemy.getHeight()),
                     enemy.isMoving(),
-                    enemy.isFacingLeft()));
+                    enemy.isFacingLeft(),
+                    enemy.isDefeated(),
+                    enemy.getTicksSinceDefeat()));
         }
 
         viewModel.setState(new EnemyWaveState(formatWaveLabel(outputData.getWaveNumber()),
