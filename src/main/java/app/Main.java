@@ -1,15 +1,13 @@
 package app;
 
+import data_access.CachingMapDataAccessObject;
 import data_access.FileMapDataAccessObject;
 import data_access.InMemoryCastSpellDataAccessObject;
 import data_access.InMemoryEnemyWaveDataAccessObject;
-import entity.DirtTileType;
 import entity.EnemyWave;
 import entity.FireballSpell;
 import entity.Player;
 import entity.TileMap;
-import entity.TileTypeRegistry;
-import entity.WaterTileType;
 import interface_adapter.cast_spell.CastSpellController;
 import interface_adapter.cast_spell.CastSpellPresenter;
 import interface_adapter.cast_spell.CastSpellViewModel;
@@ -21,7 +19,6 @@ import interface_adapter.game.GamePresenter;
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
 import interface_adapter.game.PlayerAnimation;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import javax.swing.SwingUtilities;
@@ -30,6 +27,7 @@ import use_case.cast_spell.UpdateProjectilesInteractor;
 import use_case.generate_mob_waves.GenerateMobWavesInteractor;
 import use_case.generate_mob_waves.MobWaveSettings;
 import use_case.generate_mob_waves.RandomEdgeSpawnPositionStrategy;
+import use_case.load_map.MapDataAccessInterface;
 import use_case.load_map.MapLoadingException;
 import use_case.update_game.UpdateGameInteractor;
 import view.EnemyWaveLayer;
@@ -87,14 +85,17 @@ public class Main {
     }
 
     private static void start() {
-        // Load and prepare the map before opening the window or starting the loop.
-        MapLayer mapLayer = new MapBuilder().build(STARTING_MAP, TILE_SIZE,
+        // Load and prepare the map before opening the window or starting the loop. The map file
+        // is read once: drawing loads it first, and the enemies get the same remembered map.
+        MapDataAccessInterface maps = new CachingMapDataAccessObject(
+                new FileMapDataAccessObject(MapBuilder.standardTileTypes(), TILE_SIZE));
+        MapLayer mapLayer = new MapBuilder().build(maps, STARTING_MAP, TILE_SIZE,
                 Map.of(0, "/tiles/water.png", 1, "/tiles/dirt.png"),
                 message -> GameWindow.showStartupError(message));
         if (mapLayer == null) {
             return;
         }
-        TileMap enemyTerrain = loadEnemyTerrain();
+        TileMap enemyTerrain = loadEnemyTerrain(maps);
         if (enemyTerrain == null) {
             return;
         }
@@ -160,16 +161,16 @@ public class Main {
     }
 
     /**
-     * Loads the starting map's terrain for the enemies' walkability checks. MapBuilder loads the
-     * same file for drawing but keeps only display data, so the terrain is read again here.
+     * Gets the starting map's terrain for the enemies' walkability checks. MapBuilder has already
+     * loaded it through the same caching source, so this returns that map without reading the
+     * file again.
      *
+     * @param maps the shared map source that MapBuilder used
      * @return the terrain, or {@code null} after reporting an error
      */
-    private static TileMap loadEnemyTerrain() {
-        TileTypeRegistry tileTypes = new TileTypeRegistry(
-                List.of(new WaterTileType(), new DirtTileType()));
+    private static TileMap loadEnemyTerrain(MapDataAccessInterface maps) {
         try {
-            return new FileMapDataAccessObject(tileTypes, TILE_SIZE).load(STARTING_MAP);
+            return maps.load(STARTING_MAP);
         } catch (MapLoadingException error) {
             GameWindow.showStartupError(error.getMessage());
             return null;

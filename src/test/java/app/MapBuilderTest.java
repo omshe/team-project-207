@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import data_access.CachingMapDataAccessObject;
+import data_access.FileMapDataAccessObject;
+import entity.TileMap;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -16,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
+import use_case.load_map.MapDataAccessInterface;
+import use_case.load_map.MapLoadingException;
 import view.MapLayer;
 
 /** Verifies startup preparation and error reporting without opening windows or dialogs. */
@@ -112,6 +117,48 @@ class MapBuilderTest {
             assertEquals(1, errors.size());
             assertTrue(errors.get(0).contains("Unable to render map:"));
             assertTrue(errors.get(0).contains("terrain ID: 0"));
+        });
+    }
+
+    @Test
+    void sharesOneMapReadBetweenDrawingAndLaterUsers() throws Exception {
+        List<String> fileReads = new ArrayList<>();
+        FileMapDataAccessObject files = new FileMapDataAccessObject(
+                MapBuilder.standardTileTypes(), 32);
+        MapDataAccessInterface countingFiles = name -> {
+            fileReads.add(name);
+            return files.load(name);
+        };
+        CachingMapDataAccessObject maps = new CachingMapDataAccessObject(countingFiles);
+        List<String> errors = new ArrayList<>();
+
+        SwingUtilities.invokeAndWait(() -> {
+            MapLayer layer = new MapBuilder().build(
+                    maps, "level1.txt", 32, IMAGES, message -> errors.add(message));
+            assertNotNull(layer);
+        });
+        TileMap enemyTerrain = maps.load("level1.txt");
+
+        assertTrue(errors.isEmpty());
+        assertEquals(List.of("level1.txt"), fileReads);
+        assertEquals(30, enemyTerrain.getColumnCount());
+        assertEquals(20, enemyTerrain.getRowCount());
+    }
+
+    @Test
+    void reportsInjectedSourceMapFailureAndBuildsNoLayer() throws Exception {
+        MapDataAccessInterface broken = name -> {
+            throw new MapLoadingException("Map resource not found: maps/" + name);
+        };
+
+        SwingUtilities.invokeAndWait(() -> {
+            List<String> errors = new ArrayList<>();
+            MapLayer layer = new MapBuilder().build(
+                    broken, "level1.txt", 32, IMAGES, message -> errors.add(message));
+
+            assertNull(layer);
+            assertEquals(1, errors.size());
+            assertTrue(errors.get(0).startsWith("Unable to load map:"));
         });
     }
 }
