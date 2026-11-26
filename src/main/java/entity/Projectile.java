@@ -8,6 +8,7 @@ import java.util.Objects;
 public final class Projectile {
 
     private final Spell spell;
+    private final String projectileTypeId;
     private final double velocityX;
     private final double velocityY;
     private final double width;
@@ -33,7 +34,29 @@ public final class Projectile {
     public Projectile(Spell spell, double positionX, double positionY,
                       double velocityX, double velocityY,
                       double width, double height) {
+        this(spell, Objects.requireNonNull(spell).getId(), positionX, positionY,
+                velocityX, velocityY, width, height);
+    }
+
+    /**
+     * Creates an instance from a definition with a fixed supplied velocity.
+     *
+     * @param definition non-null identity and hitbox settings
+     * @param positionX initial left edge
+     * @param positionY initial top edge
+     * @param velocityX finite horizontal pixels per tick, unchanged during flight
+     * @param velocityY finite vertical pixels per tick, unchanged during flight
+     */
+    public Projectile(ProjectileDefinition definition, double positionX, double positionY,
+                      double velocityX, double velocityY) {
+        this(definition.getSpell(), definition.getProjectileTypeId(), positionX, positionY,
+                velocityX, velocityY, definition.getWidth(), definition.getHeight());
+    }
+
+    private Projectile(Spell spell, String projectileTypeId, double positionX, double positionY,
+                       double velocityX, double velocityY, double width, double height) {
         this.spell = Objects.requireNonNull(spell, "Spell must not be null");
+        this.projectileTypeId = Objects.requireNonNull(projectileTypeId);
 
         if (!Double.isFinite(positionX) || !Double.isFinite(positionY)) {
             throw new IllegalArgumentException("Position must be finite");
@@ -70,6 +93,21 @@ public final class Projectile {
      */
     public Spell getSpell() {
         return spell;
+    }
+
+    /** Returns the domain projectile type, independently of spell identity. */
+    public String getProjectileTypeId() {
+        return projectileTypeId;
+    }
+
+    /** Returns the fixed horizontal velocity in pixels per tick. */
+    public double getVelocityX() {
+        return velocityX;
+    }
+
+    /** Returns the fixed vertical velocity in pixels per tick. */
+    public double getVelocityY() {
+        return velocityY;
     }
 
     /**
