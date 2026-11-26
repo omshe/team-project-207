@@ -5,6 +5,7 @@ package use_case.cast_spell;
  */
 public final class ProjectileOutputData {
     private final String spellId;
+    private final String projectileTypeId;
     private final double positionX;
     private final double positionY;
     private final double width;
@@ -26,13 +27,38 @@ public final class ProjectileOutputData {
     public ProjectileOutputData(String spellId, double positionX, double positionY,
                                 double width, double height,
                                 double velocityX, double velocityY) {
+        this(spellId, spellId, positionX, positionY, width, height, velocityX, velocityY);
+    }
+
+    /**
+     * Creates values with separate spell identity and domain projectile type.
+     *
+     * @param spellId originating spell
+     * @param projectileTypeId domain projectile type
+     * @param positionX left edge
+     * @param positionY top edge
+     * @param width hitbox width
+     * @param height hitbox height
+     * @param velocityX fixed horizontal velocity
+     * @param velocityY fixed vertical velocity
+     */
+    public ProjectileOutputData(String spellId, String projectileTypeId,
+                                double positionX, double positionY,
+                                double width, double height,
+                                double velocityX, double velocityY) {
         this.spellId = spellId;
+        this.projectileTypeId = projectileTypeId;
         this.positionX = positionX;
         this.positionY = positionY;
         this.width = width;
         this.height = height;
         this.velocityX = velocityX;
         this.velocityY = velocityY;
+    }
+
+    /** Returns the domain projectile type used for renderer registration. */
+    public String getProjectileTypeId() {
+        return projectileTypeId;
     }
 
     /** Returns the spell identifier. */

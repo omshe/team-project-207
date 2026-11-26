@@ -43,7 +43,7 @@ public final class CastSpellPresenter
         List<ProjectileDisplayData> projectiles = new ArrayList<>();
         for (ProjectileOutputData projectile : outputData.getProjectiles()) {
             projectiles.add(new ProjectileDisplayData(
-                    projectile.getSpellId(),
+                    projectile.getSpellId(), projectile.getProjectileTypeId(),
                     projectile.getX() + projectile.getWidth() / 2.0,
                     projectile.getY() + projectile.getHeight() / 2.0,
                     projectile.getWidth(),
@@ -54,7 +54,8 @@ public final class CastSpellPresenter
         List<ProjectileImpactDisplayData> impacts = new ArrayList<>();
         for (ProjectileImpactOutputData impact : outputData.getImpacts()) {
             impacts.add(new ProjectileImpactDisplayData(
-                    impact.getSpellId(), impact.getX(), impact.getY()));
+                    impact.getSpellId(), impact.getProjectileTypeId(), impact.getX(),
+                    impact.getY()));
         }
 
         viewModel.updateProjectiles(outputData.getTick(), projectiles, impacts);

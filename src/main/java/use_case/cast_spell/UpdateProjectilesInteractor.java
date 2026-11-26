@@ -3,8 +3,10 @@ package use_case.cast_spell;
 import entity.Enemy;
 import entity.Hitbox;
 import entity.Projectile;
+import entity.ProjectileSpawn;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -21,6 +23,7 @@ public final class UpdateProjectilesInteractor
     private final UpdateProjectilesOutputBoundary presenter;
     private final double worldWidth;
     private final double worldHeight;
+    private final Map<String, ProjectileImpactBehavior> impactBehaviors;
     private long tick;
 
     /**
@@ -30,6 +33,7 @@ public final class UpdateProjectilesInteractor
      * @param presenter receives the result of each tick
      * @param worldWidth positive, finite world width in pixels
      * @param worldHeight positive, finite world height in pixels
+     * @param impactBehaviors strategies indexed by domain projectile type
      * @throws NullPointerException if a collaborator is null
      * @throws IllegalArgumentException if either world dimension is not positive and finite
      */
@@ -37,9 +41,11 @@ public final class UpdateProjectilesInteractor
             UpdateProjectilesDataAccessInterface dataAccess,
             UpdateProjectilesOutputBoundary presenter,
             double worldWidth,
-            double worldHeight) {
+            double worldHeight,
+            Map<String, ProjectileImpactBehavior> impactBehaviors) {
         this.dataAccess = Objects.requireNonNull(dataAccess);
         this.presenter = Objects.requireNonNull(presenter);
+        this.impactBehaviors = Map.copyOf(impactBehaviors);
 
         if (!Double.isFinite(worldWidth) || worldWidth <= 0
                 || !Double.isFinite(worldHeight) || worldHeight <= 0) {
@@ -57,8 +63,16 @@ public final class UpdateProjectilesInteractor
         List<ProjectileOutputData> survivors = new ArrayList<>();
         List<ProjectileImpactOutputData> impacts = new ArrayList<>();
         List<Enemy> enemies = dataAccess.getEnemies();
+        List<Projectile> originals = dataAccess.getProjectiles();
+        List<Projectile> pending = new ArrayList<>();
+        for (Projectile projectile : originals) {
+            if (!impactBehaviors.containsKey(projectile.getProjectileTypeId())) {
+                throw new IllegalStateException("No impact behavior for "
+                        + projectile.getProjectileTypeId());
+            }
+        }
 
-        for (Projectile projectile : dataAccess.getProjectiles()) {
+        for (Projectile projectile : originals) {
             Hitbox start = projectile.getHitbox();
 
             if (!start.isInsideWorld(worldWidth, worldHeight)) {
@@ -95,13 +109,16 @@ public final class UpdateProjectilesInteractor
             }
 
             if (hitEnemy != null && contactTime <= 1 && contactTime <= exitTime) {
+                double centerX = start.getCenterX() + deltaX * contactTime;
+                double centerY = start.getCenterY() + deltaY * contactTime;
+                ProjectileImpactContext context = new ProjectileImpactContext(centerX, centerY,
+                        projectile.getVelocityX(), projectile.getVelocityY());
+                List<Projectile> children = resolveChildren(projectile, context);
                 dataAccess.removeProjectile(projectile);
                 hitEnemy.defeat();
-
-                impacts.add(new ProjectileImpactOutputData(
-                        projectile.getSpell().getId(),
-                        start.getCenterX() + deltaX * contactTime,
-                        start.getCenterY() + deltaY * contactTime));
+                pending.addAll(children);
+                impacts.add(new ProjectileImpactOutputData(projectile.getSpell().getId(),
+                        projectile.getProjectileTypeId(), centerX, centerY));
                 continue;
             }
 
@@ -110,19 +127,45 @@ public final class UpdateProjectilesInteractor
                 continue;
             }
 
-            survivors.add(new ProjectileOutputData(
-                    projectile.getSpell().getId(),
-                    end.getX(),
-                    end.getY(),
-                    end.getWidth(),
-                    end.getHeight(),
-                    deltaX,
-                    deltaY));
+            survivors.add(snapshot(projectile));
+        }
+
+        // Born at the end of this update: visible now, first movement next tick.
+        for (Projectile child : pending) {
+            dataAccess.addProjectile(child);
+            survivors.add(snapshot(child));
         }
 
         tick++;
         presenter.present(new UpdateProjectilesOutputData(
                 tick, survivors, impacts));
+    }
+
+    /** Validates every requested child before applying this contact's mutations. */
+    private List<Projectile> resolveChildren(Projectile parent, ProjectileImpactContext context) {
+        List<ProjectileSpawn> spawns = List.copyOf(impactBehaviors.get(
+                parent.getProjectileTypeId()).resolve(context));
+        List<Projectile> children = new ArrayList<>();
+        for (ProjectileSpawn spawn : spawns) {
+            Projectile child = spawn.createProjectile();
+            if (!impactBehaviors.containsKey(child.getProjectileTypeId())) {
+                throw new IllegalStateException("No impact behavior for "
+                        + child.getProjectileTypeId());
+            }
+            if (child.getHitbox().isInsideWorld(worldWidth, worldHeight)) {
+                children.add(child);
+            }
+        }
+        return children;
+    }
+
+    /** Copies actual velocity, including for a newborn projectile that has not moved. */
+    private static ProjectileOutputData snapshot(Projectile projectile) {
+        Hitbox box = projectile.getHitbox();
+        return new ProjectileOutputData(projectile.getSpell().getId(),
+                projectile.getProjectileTypeId(), box.getX(), box.getY(),
+                box.getWidth(), box.getHeight(),
+                projectile.getVelocityX(), projectile.getVelocityY());
     }
 
     /**

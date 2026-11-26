@@ -5,6 +5,7 @@ import java.util.Objects;
 /** Immutable geometry and orientation used to draw one flying projectile. */
 public final class ProjectileDisplayData {
     private final String spellId;
+    private final String projectileTypeId;
     private final double centerX;
     private final double centerY;
     private final double width;
@@ -23,12 +24,35 @@ public final class ProjectileDisplayData {
      */
     public ProjectileDisplayData(String spellId, double centerX, double centerY,
                                  double width, double height, double angleRadians) {
+        this(spellId, spellId, centerX, centerY, width, height, angleRadians);
+    }
+
+    /**
+     * Creates values with separate spell identity and domain projectile type.
+     *
+     * @param spellId originating spell
+     * @param projectileTypeId domain projectile type
+     * @param centerX centre X
+     * @param centerY centre Y
+     * @param width hitbox width
+     * @param height hitbox height
+     * @param angleRadians fixed flight orientation
+     */
+    public ProjectileDisplayData(String spellId, String projectileTypeId,
+                                 double centerX, double centerY,
+                                 double width, double height, double angleRadians) {
         this.spellId = Objects.requireNonNull(spellId);
+        this.projectileTypeId = Objects.requireNonNull(projectileTypeId);
         this.centerX = centerX;
         this.centerY = centerY;
         this.width = width;
         this.height = height;
         this.angleRadians = angleRadians;
+    }
+
+    /** Returns the domain projectile type used for renderer registration. */
+    public String getProjectileTypeId() {
+        return projectileTypeId;
     }
 
     /** Returns the spell identifier. */

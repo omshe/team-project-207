@@ -5,6 +5,7 @@ import java.util.Objects;
 /** Immutable location of one impact animation to start when the view receives it. */
 public final class ProjectileImpactDisplayData {
     private final String spellId;
+    private final String projectileTypeId;
     private final double centerX;
     private final double centerY;
 
@@ -17,9 +18,28 @@ public final class ProjectileImpactDisplayData {
      * @param centerY vertical impact center in world pixels
      */
     public ProjectileImpactDisplayData(String spellId, double centerX, double centerY) {
+        this(spellId, spellId, centerX, centerY);
+    }
+
+    /**
+     * Creates values with separate spell identity and domain projectile type.
+     *
+     * @param spellId originating spell
+     * @param projectileTypeId domain projectile type
+     * @param centerX impact centre X
+     * @param centerY impact centre Y
+     */
+    public ProjectileImpactDisplayData(String spellId, String projectileTypeId,
+                                       double centerX, double centerY) {
         this.spellId = Objects.requireNonNull(spellId);
+        this.projectileTypeId = Objects.requireNonNull(projectileTypeId);
         this.centerX = centerX;
         this.centerY = centerY;
+    }
+
+    /** Returns the domain projectile type used for renderer registration. */
+    public String getProjectileTypeId() {
+        return projectileTypeId;
     }
 
     /** Returns the impacting spell's identifier. */

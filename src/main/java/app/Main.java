@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Random;
 import javax.swing.SwingUtilities;
 import use_case.cast_spell.CastSpellInteractor;
+import use_case.cast_spell.TerminalImpactBehavior;
 import use_case.cast_spell.UpdateProjectilesInteractor;
 import use_case.generate_mob_waves.GenerateMobWavesInteractor;
 import use_case.generate_mob_waves.MobWaveSettings;
@@ -140,7 +141,8 @@ public class Main {
                         Map.of(fireball.getId(), fireball), PROJECTILE_SPEED,
                         PROJECTILE_WIDTH, PROJECTILE_HEIGHT),
                 new UpdateProjectilesInteractor(castDataAccess, castSpellPresenter,
-                        SCREEN_WIDTH, SCREEN_HEIGHT));
+                        SCREEN_WIDTH, SCREEN_HEIGHT, Map.of("fireball",
+                        new TerminalImpactBehavior())));
 
         // Frameworks: Swing window, input, loop
         KeyboardInput keyboard = new KeyboardInput();
