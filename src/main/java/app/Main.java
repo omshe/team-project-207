@@ -4,9 +4,12 @@ import data_access.CachingMapDataAccessObject;
 import data_access.FileMapDataAccessObject;
 import data_access.InMemoryCastSpellDataAccessObject;
 import data_access.InMemoryEnemyWaveDataAccessObject;
+import entity.CrystalBurstSpell;
 import entity.EnemyWave;
 import entity.FireballSpell;
 import entity.Player;
+import entity.ProjectileDefinition;
+import entity.ShardFan;
 import entity.TileMap;
 import interface_adapter.cast_spell.CastSpellController;
 import interface_adapter.cast_spell.CastSpellPresenter;
@@ -19,10 +22,12 @@ import interface_adapter.game.GamePresenter;
 import interface_adapter.game.GameState;
 import interface_adapter.game.GameViewModel;
 import interface_adapter.game.PlayerAnimation;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import javax.swing.SwingUtilities;
 import use_case.cast_spell.CastSpellInteractor;
+import use_case.cast_spell.ShatterIntoFanBehavior;
 import use_case.cast_spell.TerminalImpactBehavior;
 import use_case.cast_spell.UpdateProjectilesInteractor;
 import use_case.generate_mob_waves.GenerateMobWavesInteractor;
@@ -31,6 +36,8 @@ import use_case.generate_mob_waves.RandomEdgeSpawnPositionStrategy;
 import use_case.load_map.MapDataAccessInterface;
 import use_case.load_map.MapLoadingException;
 import use_case.update_game.UpdateGameInteractor;
+import view.CrystalCastInput;
+import view.CrystalSprite;
 import view.EnemyWaveLayer;
 import view.FireballSprite;
 import view.GamePanel;
@@ -136,24 +143,44 @@ public class Main {
         InMemoryCastSpellDataAccessObject castDataAccess =
                 new InMemoryCastSpellDataAccessObject(player, enemyWave);
         FireballSpell fireball = new FireballSpell();
+        CrystalBurstSpell crystal = new CrystalBurstSpell();
+        ProjectileDefinition fireballFlight = new ProjectileDefinition(fireball, "fireball",
+                PROJECTILE_SPEED, PROJECTILE_WIDTH, PROJECTILE_HEIGHT);
+        ProjectileDefinition crystalFlight = new ProjectileDefinition(
+                crystal, "crystal_core", 8, 16, 16);
+        ProjectileDefinition shardFlight = new ProjectileDefinition(
+                crystal, "crystal_shard", 10, 8, 8);
+        TerminalImpactBehavior terminal = new TerminalImpactBehavior();
+        ShatterIntoFanBehavior shatter = new ShatterIntoFanBehavior(
+                new ShardFan(shardFlight, List.of(-25.0, 0.0, 25.0)));
         CastSpellController castSpellController = new CastSpellController(
                 new CastSpellInteractor(castDataAccess, castSpellPresenter,
-                        Map.of(fireball.getId(), fireball), PROJECTILE_SPEED,
-                        PROJECTILE_WIDTH, PROJECTILE_HEIGHT),
+                        Map.of(fireball.getId(), fireballFlight, crystal.getId(), crystalFlight)),
                 new UpdateProjectilesInteractor(castDataAccess, castSpellPresenter,
-                        SCREEN_WIDTH, SCREEN_HEIGHT, Map.of("fireball",
-                        new TerminalImpactBehavior())));
+                        SCREEN_WIDTH, SCREEN_HEIGHT, Map.of(
+                                "fireball", terminal, "crystal_core", shatter,
+                                "crystal_shard", terminal)));
 
         // Frameworks: Swing window, input, loop
         KeyboardInput keyboard = new KeyboardInput();
         EnemyWaveLayer enemyWaveLayer = new EnemyWaveLayer(enemyWaveViewModel, slimeSprite);
         ProjectileLayer projectileLayer = new ProjectileLayer(castSpellViewModel,
-                Map.of(fireball.getId(), new FireballSprite()));
+                Map.of("fireball", new FireballSprite(),
+                        "crystal_core", new CrystalSprite(
+                                "/sprites/spells/crystal_burst/crystal-core-flight.png",
+                                "/sprites/spells/crystal_burst/crystal-core-shatter.png"),
+                        "crystal_shard", new CrystalSprite(
+                                "/sprites/spells/crystal_burst/crystal-shard-flight.png",
+                                "/sprites/spells/crystal_burst/crystal-shard-impact.png")));
         GamePanel panel = new GamePanel(viewModel, PlayerSprite.wizard(), mapLayer, enemyWaveLayer,
                 projectileLayer, SCREEN_WIDTH, SCREEN_HEIGHT);
         panel.addKeyListener(keyboard);
         panel.addKeyListener(new HitboxOverlayKey(enemyWaveLayer));
         panel.addMouseListener(new MouseCastInput(castSpellController, fireball.getId()));
+        CrystalCastInput crystalInput = new CrystalCastInput(
+                castSpellController, panel, crystal.getId());
+        panel.addKeyListener(crystalInput);
+        panel.addFocusListener(crystalInput);
 
         GameWindow window = new GameWindow(panel);
         window.setVisible(true);
