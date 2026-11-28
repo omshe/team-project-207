@@ -10,6 +10,7 @@ import entity.Enemy;
 import entity.EnemyWave;
 import entity.FireballSpell;
 import entity.Player;
+import entity.TestTerrain;
 import interface_adapter.cast_spell.CastSpellController;
 import interface_adapter.cast_spell.CastSpellPresenter;
 import interface_adapter.cast_spell.CastSpellViewModel;
@@ -67,8 +68,8 @@ class CastSpellWiringTest {
                 new UpdateProjectilesInteractor(storage, presenter, 960, 640));
 
         GameController movement = new GameController(
-                new UpdateGameInteractor(
-                        player, 960, 640, new GamePresenter(gameViewModel)));
+                new UpdateGameInteractor(player, () -> TestTerrain.openGround(30, 20),
+                        960, 640, new GamePresenter(gameViewModel)));
 
         EnemyWaveController enemies = new EnemyWaveController(
                 new GenerateMobWavesInteractor(

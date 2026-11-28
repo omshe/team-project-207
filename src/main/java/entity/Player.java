@@ -28,12 +28,20 @@ public class Player {
     }
 
     /**
-     * Moves the player one tick in the given direction.
-     * dx and dy are -1, 0 or 1. Diagonal movement is normalized so it is not faster.
-     * Moving sideways turns the player to face that way; moving straight up or down keeps the old
-     * facing.
+     * Moves the player one tick in the given direction over the given terrain.
+     *
+     * <p>Diagonal movement is normalized so it is not faster. The step is taken along x first
+     * and then along y, and the terrain limits each part separately: the player stops flush
+     * against non-walkable tiles and the map edge, and slides along them when moving
+     * diagonally. Moving sideways turns the player to face that way, even when the way is
+     * blocked; moving straight up or down keeps the old facing. {@link #isMoving()} reports
+     * whether a direction was requested, not whether the position changed.
+     *
+     * @param dx      horizontal direction: -1 (left), 0 or 1 (right)
+     * @param dy      vertical direction: -1 (up), 0 or 1 (down)
+     * @param terrain the non-null map the player walks on
      */
-    public void move(int dx, int dy) {
+    public void move(int dx, int dy, TileMap terrain) {
         moving = dx != 0 || dy != 0;
         if (!moving) {
             return;
@@ -45,8 +53,8 @@ public class Player {
             facingLeft = false;
         }
         double length = Math.sqrt(dx * dx + dy * dy);
-        positionX += dx / length * speed;
-        positionY += dy / length * speed;
+        positionX += terrain.limitHorizontalMove(getHitbox(), dx / length * speed);
+        positionY += terrain.limitVerticalMove(getHitbox(), dy / length * speed);
     }
 
     /** Keeps the player inside a world of the given size. */
@@ -65,6 +73,15 @@ public class Player {
 
     public int getSize() {
         return size;
+    }
+
+    /**
+     * Returns the player's square box, which the terrain and other rules collide with.
+     *
+     * @return a new immutable hitbox at the current position
+     */
+    public Hitbox getHitbox() {
+        return new Hitbox(positionX, positionY, size, size);
     }
 
     /** True if the player last turned left; players start facing right. */

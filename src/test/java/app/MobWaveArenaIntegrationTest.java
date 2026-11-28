@@ -106,7 +106,7 @@ class MobWaveArenaIntegrationTest {
         for (int lap = 0; lap < 10; lap++) {
             for (int[] leg : legs) {
                 for (int step = 0; step < leg[2]; step++) {
-                    player.move(leg[0], leg[1]);
+                    player.move(leg[0], leg[1], terrain);
                     interactor.execute(new GenerateMobWavesInputData(leg[0], leg[1]));
                     assertRulesHold(tick, false);
                     tick = tick + 1;

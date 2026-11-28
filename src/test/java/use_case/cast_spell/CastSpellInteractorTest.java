@@ -9,6 +9,7 @@ import entity.FireballSpell;
 import entity.Player;
 import entity.Projectile;
 import entity.Spell;
+import entity.TestTerrain;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -78,7 +79,7 @@ class CastSpellInteractorTest {
      */
     @Test
     void launchUsesCurrentPlayerPosition() {
-        dataAccess.player.move(1, 0);
+        dataAccess.player.move(1, 0, TestTerrain.openGround(30, 20));
 
         interactor.execute(new CastSpellInputData("fireball", 224, 224));
 

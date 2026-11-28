@@ -4,8 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import data_access.CachingMapDataAccessObject;
+import data_access.FileMapDataAccessObject;
 import data_access.InMemoryCastSpellDataAccessObject;
 import data_access.InMemoryEnemyWaveDataAccessObject;
+import data_access.InMemoryUpdateGameDataAccessObject;
 import entity.EnemyWave;
 import entity.FireballSpell;
 import entity.Player;
@@ -34,6 +37,8 @@ import use_case.cast_spell.UpdateProjectilesInteractor;
 import use_case.generate_mob_waves.EdgeSpawnPositionStrategy;
 import use_case.generate_mob_waves.GenerateMobWavesInteractor;
 import use_case.generate_mob_waves.MobWaveSettings;
+import use_case.load_map.MapDataAccessInterface;
+import use_case.load_map.MapLoadingException;
 import use_case.update_game.UpdateGameInteractor;
 import view.EnemyWaveLayer;
 import view.FireballSprite;
@@ -50,7 +55,8 @@ class MapMovementIntegrationTest {
     @Test
     void supportsWasdAndArrowKeysWithTheMapVisible() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            MapLayer layer = loadMap();
+            MapDataAccessInterface maps = newMaps();
+            MapLayer layer = loadMap(maps);
             int[][] cases = {
                     {KeyEvent.VK_W, 0, -4}, {KeyEvent.VK_UP, 0, -4},
                     {KeyEvent.VK_S, 0, 4}, {KeyEvent.VK_DOWN, 0, 4},
@@ -61,8 +67,8 @@ class MapMovementIntegrationTest {
                 Player player = new Player(456, 296, 48, 4);
                 GameViewModel model = new GameViewModel(new GameState(456, 296, 48,
                         PlayerAnimation.IDLE, false, 0));
-                GameController controller = new GameController(
-                        new UpdateGameInteractor(player, 960, 640, new GamePresenter(model)));
+                GameController controller = new GameController(new UpdateGameInteractor(
+                        player, arena(maps), 960, 640, new GamePresenter(model)));
                 EnemyWaveViewModel enemies = new EnemyWaveViewModel();
                 final EnemyWaveController enemyController = enemyController(player, enemies);
                 GamePanel panel = new GamePanel(model, PlayerSprite.wizard(), layer,
@@ -92,24 +98,29 @@ class MapMovementIntegrationTest {
     }
 
     @Test
-    void doesNotAddPlayerWaterCollision() throws Exception {
+    void stopsTheWizardAtTheWaterEdge() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            MapLayer layer = loadMap();
-            Player player = new Player(700, 128, 48, 4);
-            GameViewModel model = new GameViewModel(new GameState(700, 128, 48,
+            // Water starts at column 22 (x = 704) on rows 4 and 5 of level1.txt.
+            MapDataAccessInterface maps = newMaps();
+            MapLayer layer = loadMap(maps);
+            Player player = new Player(650, 128, 48, 4);
+            GameViewModel model = new GameViewModel(new GameState(650, 128, 48,
                     PlayerAnimation.IDLE, false, 0));
-            GameController controller = new GameController(
-                    new UpdateGameInteractor(player, 960, 640, new GamePresenter(model)));
+            GameController controller = new GameController(new UpdateGameInteractor(
+                    player, arena(maps), 960, 640, new GamePresenter(model)));
             GamePanel panel = new GamePanel(model, PlayerSprite.wizard(), layer,
                     new EnemyWaveLayer(new EnemyWaveViewModel(), new SlimeSprite()),
                     emptyProjectiles(), 960, 640);
             KeyboardInput keyboard = new KeyboardInput();
 
             keyboard.keyPressed(key(panel, KeyEvent.KEY_PRESSED, KeyEvent.VK_D));
-            tick(controller, keyboard);
+            for (int step = 0; step < 5; step++) {
+                tick(controller, keyboard);
+            }
             keyboard.keyReleased(key(panel, KeyEvent.KEY_RELEASED, KeyEvent.VK_D));
 
-            assertEquals(704, model.getState().getPlayerX());
+            assertEquals(704 - 48, model.getState().getPlayerX());
+            assertEquals(704 - 48, player.getX(), 1e-9);
             BufferedImage image = paint(panel);
             assertWizardDrawn(image, model.getState());
             assertEquals(Color.BLUE.getRGB(), image.getRGB(832, 128));
@@ -122,8 +133,9 @@ class MapMovementIntegrationTest {
         EnemyWave wave = new EnemyWave();
         GameViewModel game = new GameViewModel(new GameState(648, 136, 48,
                 PlayerAnimation.IDLE, false, 0));
-        GameController movement = new GameController(
-                new UpdateGameInteractor(player, 960, 640, new GamePresenter(game)));
+        MapDataAccessInterface maps = newMaps();
+        GameController movement = new GameController(new UpdateGameInteractor(
+                player, arena(maps), 960, 640, new GamePresenter(game)));
         EnemyWaveViewModel enemies = new EnemyWaveViewModel();
         EnemyWaveController waves = enemyController(player, wave, enemies);
         CastSpellViewModel spells = new CastSpellViewModel();
@@ -138,7 +150,7 @@ class MapMovementIntegrationTest {
         GamePanel[] panel = new GamePanel[1];
         BufferedImage[] before = new BufferedImage[1];
         SwingUtilities.invokeAndWait(() -> {
-            panel[0] = new GamePanel(game, PlayerSprite.wizard(), loadMap(),
+            panel[0] = new GamePanel(game, PlayerSprite.wizard(), loadMap(maps),
                     new EnemyWaveLayer(enemies, new SlimeSprite()),
                     new ProjectileLayer(spells, Map.of(fireball.getId(), new FireballSprite())),
                     960, 640);
@@ -195,9 +207,23 @@ class MapMovementIntegrationTest {
         assertTrue(opaquePixels > 0, "The wizard should be drawn above the terrain.");
     }
 
-    private static MapLayer loadMap() {
-        return new MapBuilder().build("level1.txt", 32,
+    /** Builds a map source like Main's: the file is read once and every caller shares it. */
+    private static MapDataAccessInterface newMaps() {
+        return new CachingMapDataAccessObject(
+                new FileMapDataAccessObject(MapBuilder.standardTileTypes(), 32));
+    }
+
+    private static MapLayer loadMap(MapDataAccessInterface maps) {
+        return new MapBuilder().build(maps, "level1.txt", 32,
                 Map.of(0, "/tiles/water.png", 1, "/tiles/dirt.png"), message -> fail(message));
+    }
+
+    private static InMemoryUpdateGameDataAccessObject arena(MapDataAccessInterface maps) {
+        try {
+            return new InMemoryUpdateGameDataAccessObject(maps.load("level1.txt"));
+        } catch (MapLoadingException error) {
+            return fail(error.getMessage());
+        }
     }
 
     private static KeyEvent key(GamePanel panel, int eventId, int keyCode) {

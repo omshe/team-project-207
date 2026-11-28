@@ -4,6 +4,7 @@ import data_access.CachingMapDataAccessObject;
 import data_access.FileMapDataAccessObject;
 import data_access.InMemoryCastSpellDataAccessObject;
 import data_access.InMemoryEnemyWaveDataAccessObject;
+import data_access.InMemoryUpdateGameDataAccessObject;
 import entity.EnemyWave;
 import entity.FireballSpell;
 import entity.Player;
@@ -86,7 +87,8 @@ public class Main {
 
     private static void start() {
         // Load and prepare the map before opening the window or starting the loop. The map file
-        // is read once: drawing loads it first, and the enemies get the same remembered map.
+        // is read once: drawing loads it first, and the player and enemies get the same
+        // remembered map, so everyone walks on the terrain that is drawn.
         MapDataAccessInterface maps = new CachingMapDataAccessObject(
                 new FileMapDataAccessObject(MapBuilder.standardTileTypes(), TILE_SIZE));
         MapLayer mapLayer = new MapBuilder().build(maps, STARTING_MAP, TILE_SIZE,
@@ -95,8 +97,8 @@ public class Main {
         if (mapLayer == null) {
             return;
         }
-        TileMap enemyTerrain = loadEnemyTerrain(maps);
-        if (enemyTerrain == null) {
+        TileMap terrain = loadTerrain(maps);
+        if (terrain == null) {
             return;
         }
 
@@ -110,8 +112,9 @@ public class Main {
                 new GameState((int) player.getX(), (int) player.getY(), player.getSize(),
                         PlayerAnimation.IDLE, player.isFacingLeft(), 0));
         GamePresenter presenter = new GamePresenter(viewModel);
-        UpdateGameInteractor updateGame = new UpdateGameInteractor(player, SCREEN_WIDTH,
-                SCREEN_HEIGHT, presenter);
+        UpdateGameInteractor updateGame = new UpdateGameInteractor(player,
+                new InMemoryUpdateGameDataAccessObject(terrain),
+                SCREEN_WIDTH, SCREEN_HEIGHT, presenter);
         final GameController controller = new GameController(updateGame);
 
         // Generate Mob Waves: shares the same player object, so enemies chase where it really is.
@@ -119,7 +122,7 @@ public class Main {
         SlimeSprite slimeSprite = new SlimeSprite();
         EnemyWaveViewModel enemyWaveViewModel = new EnemyWaveViewModel();
         GenerateMobWavesInteractor generateMobWaves = new GenerateMobWavesInteractor(
-                new InMemoryEnemyWaveDataAccessObject(player, enemyWave, enemyTerrain),
+                new InMemoryEnemyWaveDataAccessObject(player, enemyWave, terrain),
                 new EnemyWavePresenter(enemyWaveViewModel),
                 new RandomEdgeSpawnPositionStrategy(new Random(), SPAWN_EDGE_MARGIN,
                         SPAWN_BAND_DEPTH, SPAWN_MIN_PLAYER_DISTANCE, SPAWN_CANDIDATES),
@@ -161,14 +164,14 @@ public class Main {
     }
 
     /**
-     * Gets the starting map's terrain for the enemies' walkability checks. MapBuilder has already
-     * loaded it through the same caching source, so this returns that map without reading the
-     * file again.
+     * Gets the starting map's terrain for player movement and the enemies' walkability checks.
+     * MapBuilder has already loaded it through the same caching source, so this returns that map
+     * without reading the file again.
      *
      * @param maps the shared map source that MapBuilder used
      * @return the terrain, or {@code null} after reporting an error
      */
-    private static TileMap loadEnemyTerrain(MapDataAccessInterface maps) {
+    private static TileMap loadTerrain(MapDataAccessInterface maps) {
         try {
             return maps.load(STARTING_MAP);
         } catch (MapLoadingException error) {
