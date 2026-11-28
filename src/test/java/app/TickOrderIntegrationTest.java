@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import data_access.InMemoryEnemyWaveDataAccessObject;
 import entity.EnemyWave;
 import entity.Player;
+import entity.TestTerrain;
 import interface_adapter.enemy_wave.EnemyDisplayData;
 import interface_adapter.enemy_wave.EnemyWaveController;
 import interface_adapter.enemy_wave.EnemyWavePresenter;
@@ -31,7 +32,8 @@ class TickOrderIntegrationTest {
             new GameState(456, 296, 48, PlayerAnimation.IDLE, false, 0));
     private final EnemyWaveViewModel enemyWaveViewModel = new EnemyWaveViewModel();
     private final GameController gameController = new GameController(
-            new UpdateGameInteractor(player, 960, 640, new GamePresenter(gameViewModel)));
+            new UpdateGameInteractor(player, () -> TestTerrain.openGround(30, 20), 960, 640,
+                    new GamePresenter(gameViewModel)));
     private final EnemyWaveController enemyWaveController = new EnemyWaveController(
             new GenerateMobWavesInteractor(
                     new InMemoryEnemyWaveDataAccessObject(player, new EnemyWave()),

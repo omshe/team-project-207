@@ -11,6 +11,8 @@ import entity.Enemy;
 import entity.EnemyWave;
 import entity.Hitbox;
 import entity.Player;
+import entity.TestTerrain;
+import entity.TileMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +28,7 @@ class GenerateMobWavesInteractorTest {
     private static final int WORLD_HEIGHT = 640;
     private static final int PLAYER_SIZE = 48;
     private static final double ENEMY_SPEED = 2;
+    private static final TileMap OPEN_GROUND = TestTerrain.openGround(30, 20);
 
     private Player player;
     private EnemyWave wave;
@@ -378,7 +381,7 @@ class GenerateMobWavesInteractorTest {
 
         // Player moves far down; the enemy's next step must bend downward.
         for (int index = 0; index < 50; index++) {
-            player.move(0, 1);
+            player.move(0, 1, OPEN_GROUND);
         }
         tick(0, 1);
 
@@ -416,7 +419,7 @@ class GenerateMobWavesInteractorTest {
         tick(1, 0);
         idleTicks(1000);
         for (int index = 0; index < 30; index++) {
-            player.move(0, 1);
+            player.move(0, 1, OPEN_GROUND);
         }
         tick(0, 1);
         boolean someoneMoved = false;

@@ -11,6 +11,7 @@ import entity.EnemyWave;
 import entity.FireballSpell;
 import entity.Player;
 import entity.Projectile;
+import entity.TestTerrain;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import use_case.cast_spell.CastSpellDataAccessInterface;
@@ -41,7 +42,7 @@ class InMemoryCastSpellDataAccessObjectTest {
     void getPlayerReturnsSharedPlayer() {
         assertSame(player, dataAccess.getPlayer());
 
-        player.move(1, 0);
+        player.move(1, 0, TestTerrain.openGround(30, 20));
 
         assertEquals(104, dataAccess.getPlayer().getX(), 1e-9);
     }
