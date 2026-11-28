@@ -18,6 +18,13 @@ public interface UpdateProjectilesDataAccessInterface {
     List<Projectile> getProjectiles();
 
     /**
+     * Stores one newborn secondary projectile on the game-loop thread.
+     *
+     * @param projectile non-null projectile to add once after the original update iteration
+     */
+    void addProjectile(Projectile projectile);
+
+    /**
      * Removes a stored projectile, identified by its object identity.
      *
      * @param projectile the projectile to remove

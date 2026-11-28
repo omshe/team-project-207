@@ -2,7 +2,9 @@ package use_case.cast_spell;
 
 import entity.Player;
 import entity.Projectile;
+import entity.ProjectileDefinition;
 import entity.Spell;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -12,10 +14,7 @@ import java.util.Objects;
 public final class CastSpellInteractor implements CastSpellInputBoundary {
     private final CastSpellDataAccessInterface dataAccess;
     private final CastSpellOutputBoundary presenter;
-    private final Map<String, Spell> spells;
-    private final double projectileSpeed;
-    private final double projectileWidth;
-    private final double projectileHeight;
+    private final Map<String, ProjectileDefinition> spells;
 
     /**
      * Creates a launch use case with injected session access and spell definitions.
@@ -37,7 +36,7 @@ public final class CastSpellInteractor implements CastSpellInputBoundary {
                                double projectileHeight) {
         this.dataAccess = Objects.requireNonNull(dataAccess);
         this.presenter = Objects.requireNonNull(presenter);
-        this.spells = Map.copyOf(spells);
+        Map<String, Spell> identities = Map.copyOf(spells);
 
         if (!Double.isFinite(projectileSpeed) || projectileSpeed <= 0
                 || !Double.isFinite(projectileWidth) || projectileWidth <= 0
@@ -46,9 +45,32 @@ public final class CastSpellInteractor implements CastSpellInputBoundary {
                     "Projectile speed and dimensions must be positive and finite");
         }
 
-        this.projectileSpeed = projectileSpeed;
-        this.projectileWidth = projectileWidth;
-        this.projectileHeight = projectileHeight;
+        Map<String, ProjectileDefinition> definitions = new HashMap<>();
+        for (Map.Entry<String, Spell> entry : identities.entrySet()) {
+            definitions.put(entry.getKey(), new ProjectileDefinition(entry.getValue(),
+                    entry.getValue().getId(), projectileSpeed, projectileWidth, projectileHeight));
+        }
+        this.spells = Map.copyOf(definitions);
+    }
+
+    /**
+     * Creates a caster with separate immutable flight definitions for each spell.
+     *
+     * @param dataAccess shared player and projectile storage
+     * @param presenter success/failure output boundary
+     * @param definitions initial projectile definitions indexed by spell ID
+     */
+    public CastSpellInteractor(CastSpellDataAccessInterface dataAccess,
+                               CastSpellOutputBoundary presenter,
+                               Map<String, ProjectileDefinition> definitions) {
+        this.dataAccess = Objects.requireNonNull(dataAccess);
+        this.presenter = Objects.requireNonNull(presenter);
+        this.spells = Map.copyOf(definitions);
+        for (Map.Entry<String, ProjectileDefinition> entry : spells.entrySet()) {
+            if (!entry.getKey().equals(entry.getValue().getSpell().getId())) {
+                throw new IllegalArgumentException("Definition key must match its spell ID");
+            }
+        }
     }
 
     /** {@inheritDoc} */
@@ -81,18 +103,17 @@ public final class CastSpellInteractor implements CastSpellInputBoundary {
             return;
         }
 
-        Spell spell = spells.get(spellId);
-        Projectile projectile = new Projectile(
-                spell,
-                centreX - projectileWidth / 2.0,
-                centreY - projectileHeight / 2.0,
-                directionX / distance * projectileSpeed,
-                directionY / distance * projectileSpeed,
-                projectileWidth,
-                projectileHeight);
+        ProjectileDefinition definition = spells.get(spellId);
+        Spell spell = definition.getSpell();
+        Projectile projectile = new Projectile(definition,
+                centreX - definition.getWidth() / 2.0,
+                centreY - definition.getHeight() / 2.0,
+                directionX / distance * definition.getSpeed(),
+                directionY / distance * definition.getSpeed());
 
         dataAccess.addProjectile(projectile);
         presenter.prepareSuccessView(
                 new CastSpellOutputData(spell.getId(), spell.getName()));
     }
 }
+

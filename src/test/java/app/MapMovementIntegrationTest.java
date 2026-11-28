@@ -30,6 +30,7 @@ import java.util.Map;
 import javax.swing.SwingUtilities;
 import org.junit.jupiter.api.Test;
 import use_case.cast_spell.CastSpellInteractor;
+import use_case.cast_spell.TerminalImpactBehavior;
 import use_case.cast_spell.UpdateProjectilesInteractor;
 import use_case.generate_mob_waves.EdgeSpawnPositionStrategy;
 import use_case.generate_mob_waves.GenerateMobWavesInteractor;
@@ -134,7 +135,8 @@ class MapMovementIntegrationTest {
         CastSpellController casting = new CastSpellController(
                 new CastSpellInteractor(data, presenter, Map.of(fireball.getId(), fireball),
                         8, 24, 16),
-                new UpdateProjectilesInteractor(data, presenter, 960, 640));
+                new UpdateProjectilesInteractor(data, presenter, 960, 640,
+                        Map.of("fireball", new TerminalImpactBehavior())));
         GamePanel[] panel = new GamePanel[1];
         BufferedImage[] before = new BufferedImage[1];
         SwingUtilities.invokeAndWait(() -> {

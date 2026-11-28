@@ -5,6 +5,7 @@ package use_case.cast_spell;
  */
 public final class ProjectileImpactOutputData {
     private final String spellId;
+    private final String projectileTypeId;
     private final double positionX;
     private final double positionY;
 
@@ -16,9 +17,28 @@ public final class ProjectileImpactOutputData {
      * @param positionY the projectile centre's vertical world coordinate at contact
      */
     public ProjectileImpactOutputData(String spellId, double positionX, double positionY) {
+        this(spellId, spellId, positionX, positionY);
+    }
+
+    /**
+     * Creates values with separate spell identity and domain projectile type.
+     *
+     * @param spellId originating spell
+     * @param projectileTypeId domain projectile type
+     * @param positionX impact centre X
+     * @param positionY impact centre Y
+     */
+    public ProjectileImpactOutputData(String spellId, String projectileTypeId,
+                                      double positionX, double positionY) {
         this.spellId = spellId;
+        this.projectileTypeId = projectileTypeId;
         this.positionX = positionX;
         this.positionY = positionY;
+    }
+
+    /** Returns the domain projectile type used for renderer registration. */
+    public String getProjectileTypeId() {
+        return projectileTypeId;
     }
 
     /** Returns the impacting spell's identifier. */

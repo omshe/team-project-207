@@ -11,6 +11,7 @@ import entity.FireballSpell;
 import entity.Projectile;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -24,7 +25,8 @@ class UpdateProjectilesInteractorTest {
     private final FakeDataAccess dataAccess = new FakeDataAccess();
     private final FakePresenter presenter = new FakePresenter();
     private final UpdateProjectilesInputBoundary interactor =
-            new UpdateProjectilesInteractor(dataAccess, presenter, 100, 100);
+            new UpdateProjectilesInteractor(dataAccess, presenter, 100, 100,
+                    Map.of("fireball", new TerminalImpactBehavior()));
 
     /**
      * Verifies one presentation per tick, including an empty simulation.
@@ -379,22 +381,28 @@ class UpdateProjectilesInteractorTest {
     void invalidConfigurationIsRejected() {
         assertThrows(NullPointerException.class,
                 () -> new UpdateProjectilesInteractor(
-                        null, presenter, 100, 100));
+                        null, presenter, 100, 100, Map.of("fireball",
+                                new TerminalImpactBehavior())));
         assertThrows(NullPointerException.class,
                 () -> new UpdateProjectilesInteractor(
-                        dataAccess, null, 100, 100));
+                        dataAccess, null, 100, 100, Map.of("fireball",
+                                new TerminalImpactBehavior())));
         assertThrows(IllegalArgumentException.class,
                 () -> new UpdateProjectilesInteractor(
-                        dataAccess, presenter, 0, 100));
+                        dataAccess, presenter, 0, 100, Map.of("fireball",
+                                new TerminalImpactBehavior())));
         assertThrows(IllegalArgumentException.class,
                 () -> new UpdateProjectilesInteractor(
-                        dataAccess, presenter, 100, -1));
+                        dataAccess, presenter, 100, -1, Map.of("fireball",
+                                new TerminalImpactBehavior())));
         assertThrows(IllegalArgumentException.class,
                 () -> new UpdateProjectilesInteractor(
-                        dataAccess, presenter, Double.NaN, 100));
+                        dataAccess, presenter, Double.NaN, 100, Map.of("fireball",
+                                new TerminalImpactBehavior())));
         assertThrows(IllegalArgumentException.class,
                 () -> new UpdateProjectilesInteractor(
-                        dataAccess, presenter, 100, Double.POSITIVE_INFINITY));
+                        dataAccess, presenter, 100, Double.POSITIVE_INFINITY,
+                                Map.of("fireball", new TerminalImpactBehavior())));
     }
 
     /**
@@ -419,6 +427,12 @@ class UpdateProjectilesInteractorTest {
         @Override
         public List<Projectile> getProjectiles() {
             return List.copyOf(projectiles);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public void addProjectile(Projectile projectile) {
+            projectiles.add(projectile);
         }
 
         /** {@inheritDoc} */

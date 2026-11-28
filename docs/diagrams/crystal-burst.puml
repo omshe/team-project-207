@@ -1,0 +1,102 @@
+@startuml CrystalBurstDependencies
+package entity {
+  interface Spell
+  class CrystalBurstSpell
+  class ProjectileDefinition
+  class Projectile
+  class ProjectileSpawn
+  class ShardFan
+  CrystalBurstSpell ..|> Spell
+  ProjectileDefinition --> Spell
+  Projectile --> Spell
+  ShardFan --> ProjectileDefinition
+  ShardFan --> ProjectileSpawn
+}
+package use_case.cast_spell {
+  interface ProjectileImpactBehavior
+  class TerminalImpactBehavior
+  class ShatterIntoFanBehavior
+  class CastSpellInteractor
+  class UpdateProjectilesInteractor
+  interface UpdateProjectilesDataAccessInterface
+  interface UpdateProjectilesOutputBoundary
+  TerminalImpactBehavior ..|> ProjectileImpactBehavior
+  ShatterIntoFanBehavior ..|> ProjectileImpactBehavior
+  ShatterIntoFanBehavior --> ShardFan
+  UpdateProjectilesInteractor --> ProjectileImpactBehavior
+  UpdateProjectilesInteractor --> UpdateProjectilesDataAccessInterface
+  UpdateProjectilesInteractor --> UpdateProjectilesOutputBoundary
+}
+package view {
+  class MouseCastInput
+  class CrystalCastInput
+}
+package interface_adapter.cast_spell {
+  class CastSpellController
+  class CastSpellPresenter
+  class CastSpellViewModel
+  CastSpellPresenter ..|> UpdateProjectilesOutputBoundary
+  CastSpellPresenter --> CastSpellViewModel
+  MouseCastInput --> CastSpellController
+  CrystalCastInput --> CastSpellController
+}
+package data_access {
+  class InMemoryCastSpellDataAccessObject
+  InMemoryCastSpellDataAccessObject ..|> UpdateProjectilesDataAccessInterface
+}
+@enduml
+
+@startuml CrystalBurstContact
+participant CastSpellController as Controller
+participant UpdateProjectilesInteractor as Update
+participant ProjectileImpactBehavior as Strategy
+participant ShardFan as Fan
+participant Enemy
+participant DataAccess
+participant OutputBoundary as Output
+Controller -> Update : execute()
+Update -> DataAccess : get projectile/enemy snapshots
+Update -> Update : advance originals and find earliest contact
+Update -> Strategy : resolve(collision centre, incoming velocity)
+Strategy -> Fan : createSpawns()
+Fan --> Strategy : three immutable fixed-velocity spawns
+Strategy --> Update : spawn descriptions
+Update -> DataAccess : remove parent
+Update -> Enemy : defeat()
+Update -> Update : finish original snapshot
+Update -> DataAccess : add children at birth positions
+Update -> Output : present snapshots and one impact event
+note over Update
+  Children first move on next tick.
+  No animation callback controls simulation.
+end note
+@enduml
+
+@startuml CrystalBurstInput
+actor Player
+participant CrystalCastInput as Input
+participant GameSurface as Surface
+participant CastSpellController as Controller
+participant CastSpellInteractor as Cast
+participant CastSpellOutputBoundary as Output
+Player -> Input : fresh E press
+Input -> Input : latch until E release
+alt focused and pointer is available inside surface
+  Input -> Surface : getMousePosition()
+  Surface --> Input : cursor coordinates at press
+  Input -> Controller : queueCast(crystal_burst, captured coordinates)
+  note over Controller
+    Left-click Fireball uses the same queue.
+    No use case runs on the input thread.
+  end note
+  ... next scheduled game-loop tick ...
+  Controller -> Cast : execute(immutable request)
+  Cast -> Output : existing success or invalid/coincident-aim failure
+else no valid pointer or focus
+  Input -> Input : no request; keep press latched until release
+end
+note over Input
+  Repeat E presses do not enqueue.
+  Focus loss preserves a held latch; focus gain never casts.
+end note
+@enduml

@@ -32,6 +32,7 @@ import javax.swing.SwingUtilities;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import use_case.cast_spell.CastSpellInteractor;
+import use_case.cast_spell.TerminalImpactBehavior;
 import use_case.cast_spell.UpdateProjectilesInteractor;
 import use_case.generate_mob_waves.EdgeSpawnPositionStrategy;
 import use_case.generate_mob_waves.GenerateMobWavesInteractor;
@@ -64,7 +65,8 @@ class CastSpellWiringTest {
         CastSpellController casting = new CastSpellController(
                 new CastSpellInteractor(storage, presenter,
                         Map.of(fireball.getId(), fireball), 8, 24, 16),
-                new UpdateProjectilesInteractor(storage, presenter, 960, 640));
+                new UpdateProjectilesInteractor(storage, presenter, 960, 640,
+                        Map.of("fireball", new TerminalImpactBehavior())));
 
         GameController movement = new GameController(
                 new UpdateGameInteractor(

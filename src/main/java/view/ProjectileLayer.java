@@ -63,11 +63,11 @@ public final class ProjectileLayer {
 
         for (ProjectileImpactDisplayData impact : newImpacts) {
             activeImpacts.add(new ImpactPlayback(
-                    impact, spriteFor(impact.getSpellId()), state.getAnimationTick()));
+                    impact, spriteFor(impact.getProjectileTypeId()), state.getAnimationTick()));
         }
 
         for (ProjectileDisplayData projectile : state.getProjectiles()) {
-            spriteFor(projectile.getSpellId()).drawFlight(
+            spriteFor(projectile.getProjectileTypeId()).drawFlight(
                     graphics, projectile, state.getAnimationTick());
         }
 

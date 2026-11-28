@@ -161,32 +161,32 @@ Extensions:
 
 ### Use Case 4
 
-Name: Cast a spell
+Name: Cast a Spell
 
-Primary Actor: Player
+Primary actor: Player
 
-Preconditions: The player is in an active game, and a supported spell and fixed world aim point have been supplied.
+Preconditions: An active game has received a supported spell and captured world aim point.
 
-Trigger: A successful spell recognition result arrives. During development of the recognition system, a left click supplies the equivalent fireball request.
+Trigger: A cast request arrives. During development, left click casts Fireball and a fresh
+E-key press casts Crystal Burst toward the current mouse cursor. Drawing recognition remains
+a separate planned feature.
 
-Success Outcome: One animated projectile launches from the player's current centre and travels in a fixed direction toward the supplied aim point.
-
-Main Success Scenario:
-1. The game receives a spell and fixed world aim point.
-2. The game checks that the spell and aim point are valid.
-3. The game launches one projectile from the player's current centre.
-4. The projectile travels at a constant velocity in its initial direction.
-   Its flight animation repeats and faces the direction of travel.
-6. On enemy contact, flight ends, the first enemy along the projectile's path is defeated, and a circular impact animation plays once at the collision location. Enemies that are already defeated are not hit.
-7. If the projectile leaves the world, it disappears without an impact animation.
+Main success scenario:
+1. The game validates the spell and aim point.
+2. One projectile launches from the player's current centre and keeps its initial direction.
+3. The first living enemy contacted is defeated, and a visual impact plays once.
+4. For Crystal Burst, that impact also releases three shards in a forward fan.
+5. Each shard follows its own straight line until its first living-enemy hit or world exit.
+6. Shards never split again. World exit removes any projectile without an impact effect.
 
 Extensions:
-- 2a. The spell is unavailable or the aim point is invalid. The game shows feedback and launches nothing.
-- 2b. The aim point coincides with the launch centre. The game shows feedback and launches nothing.
-- 4a. An enemy or the cursor moves. The projectile continues in its original direction.
-- 4b. The projectile passes through the original aim point. It continues travelling in its original direction.
+- 1a. The spell is unknown or the aim is invalid/coincident: feedback appears and nothing launches.
+- 2a. The player, mouse or an enemy moves: existing projectiles keep their velocities.
+- 2b. A projectile passes the aim point: it continues travelling.
+- 3a. Several contacts tie: only the first enemy in stable order is hit.
+- 5a. An enemy moves out of a shard's path: the shard misses and continues without steering.
 
-**MVP scope** The aim point determines the projectile's initial direction. The projectile continues until enemy contact or world exit. Enemy contact produces one visual impact, which disappears after its animation finishes. For the demo, one hit defeats the enemy (a one-hit kill); health and damage are planned for later combat work.
+The demo uses one-hit defeat. Health, status effects and drawing recognition remain future work.
 
 ### Use Case 5
 Name: Enter the world
@@ -312,7 +312,7 @@ Relevant methods:
 ### Entity 2: Spell
 Represents a spell and the drawing pattern used to activate it.
 
-*Implemented for the MVP:* Spell defines getId() and getName(), and FireballSpell provides the fireball identifier and display name. Damage and applyEffect(Enemy) remain **planned** for a later combat feature.
+*Implemented for the MVP:* Spell defines getId() and getName(), and FireballSpell/CrystalBurstSpell provide their identifiers and display names. Damage and applyEffect(Enemy) remain **planned** for a later combat feature.
 
 Instance variables:
 - String name — spell’s name.
@@ -418,7 +418,9 @@ Move the wizard with WASD or the arrow keys over the green dirt and blue water m
 Your first move starts wave 1: three slimes appear near the edges and chase you, stopping
 when they reach you. They walk around water and around each other instead of stacking.
 Player-water collision is deferred, so the player can cross water.
-Left-click to cast a fireball toward the pointer. Fireballs cross water; a fireball that hits
+Left-click to cast Fireball toward the pointer, or press E to cast Crystal Burst toward the
+current cursor on the game surface. Crystal Burst splits into three linear shards on contact.
+Both spells cross water; a projectile that hits
 a slime defeats it in one hit (demo), and the slime plays its death animation and disappears.
 When a whole wave is gone, the next one appears with one more slime (3, 4, 5, ... up to 10),
 at random spots around the edges of the map. Press F3 to show or hide the slimes' hitboxes.
@@ -440,6 +442,35 @@ at random spots around the edges of the map. Press F3 to show or hide the slimes
 - `interface_adapter/game`: `GameController` (key state -> request), `GamePresenter` + `GameViewModel` (result -> what to draw, including which `PlayerAnimation` to play and for how many ticks).
 - `view`: `GameWindow` (JFrame), `GamePanel` (draws), `KeyboardInput` (records held keys), `PlayerSprite` + `SpriteAnimation` (draw the wizard's idle/walk animations from `src/main/resources/sprites/wizard`, flipped when facing left).
 - `app`: `GameLoop` (60 ticks/s thread: input -> player update -> mob-wave update -> queued casts and projectile update -> repaint) and `Main` (builds and wires everything).
+
+### Architecture (Crystal Burst, Omer)
+
+`Spell` still supplies identity. `ProjectileDefinition` supplies per-type speed and dimensions;
+`Projectile` retains fixed velocity. Core and shards share spell ID `crystal_burst`, with types
+`crystal_core` and `crystal_shard`. `ShardFan` calculates relative directions without targets.
+
+`ProjectileImpactBehavior` is a Strategy owned by `use_case.cast_spell`. The terminal strategy
+returns no children; the shatter strategy returns three spawn descriptions. The update interactor
+consumes the core, defeats the enemy, retains one impact and adds children after iterating the
+original snapshot. Newborns are displayed immediately and first move on the next tick.
+
+The presenter propagates both IDs and actual velocity into immutable display values.
+`ProjectileLayer` selects a registered `ProjectileSprite` by type. `CrystalSprite` renders both
+approved Obsidian Lance strips with fixed frame origins. `Main` wires definitions and strategies;
+no entity imports a use case or graphics class. See [the feature spec](docs/specs/crystal-burst.md)
+and [the diagrams](docs/diagrams/crystal-burst.puml).
+
+Left click keeps the existing Fireball control. A fresh E press casts Crystal Burst toward
+the current cursor position on the game surface. Both controls use the same casting queue;
+no development-spell switch, movement direction or glyph angle chooses the E aim.
+
+`CrystalCastInput` lives in `view` and is registered as a key and focus listener. It samples
+the pointer once per E press, ignoring repeat presses until E is released. A missing,
+inaccessible or out-of-surface pointer consumes the press without casting. Gameplay aim
+validation still happens in the interactor, so a coincident aim shows the existing failure.
+If E was held when focus was lost, release E once after returning to the game before pressing
+it again; focus return itself never casts. Existing queued legitimate requests remain queued.
+Movement keys and the F3 overlay binding are unchanged.
 
 ### Architecture (Load Map, Seran)
 
@@ -557,4 +588,3 @@ loaded `TileMap` that is drawn: `Main` reads `level1.txt` once through a
 ## Notes
 
 [Any additional project information.]
-
