@@ -41,6 +41,9 @@ Game, RPG, Single Player, Offline, RogueLike
 ### User Story 1
 As a player, I want to be able have a character that can move, interact and get stronger so that I’m able to fight enemies
 
+#### Current terrain-walking MVP — Jordan Lin
+As a player, I want water and other blocked ground to stop my wizard so that the arena's layout shapes where I can go.
+
 ### User Story 2
 As a player, I want to be able to fight mobs (monsters) as well as traverse and explore the world so that they can progress in our game
 
@@ -66,27 +69,40 @@ As a player, I want to save a run card showing my stats and a snapshot of the du
 ### Use Case 1
 Name: Move the Player
 
-Primary actor: User
+Primary actor: Player
+
+Owner: Jordan Lin
 
 Preconditions:
-The user is in the game loop, and not the login screen
-The player is alive (hp is not less than or equal to 0)
-Where the user is walking into is not a wall, or a blocked square
+- The player is in an active game, and the arena has loaded.
+- The wizard is standing on walkable ground (dirt) inside the arena.
 
-Trigger: The user presses the movement keys, which is w to move up, a to move left, s to move down, and d to move right
+Trigger: The player holds one or more movement keys: W or Up, A or Left, S or Down, D or Right.
 
-Success Outcome: The player moves to the tile corresponding to the key they pressed
+Success Outcome: The wizard moves in the held direction at a constant speed (no faster
+diagonally than straight) and never stands on ground that blocks walking (water) or outside
+the arena.
 
 Main success scenario:
-The user presses one of the movement keys
-The system checks that the tile they are moving to is an allowed tile to move to
-The player’s coordinate is updated
-The player sprite is updated and displayed to the user
+1. The player holds a movement key.
+2. The game works out the direction of travel from the held keys.
+3. The game moves the wizard one step in that direction. A sideways step turns it to face that way.
+4. The player sees the wizard walk to its new position.
 
 Extensions:
-2a: The tile they are moving to is a wall
-The system recognizes that its a wall
-The player stays in place
+- 2a. No movement key is held, or only opposite keys that cancel out (left and right together).
+  1. The wizard stays where it is and is shown standing still.
+- 3a. Blocked ground lies less than one step away in the direction of travel.
+  1. The wizard moves up to the edge of the blocked ground and stops there, touching it but not
+     overlapping it. Pressing towards it again does not move the wizard.
+  2. The wizard still turns to face the direction pressed and is shown walking.
+- 3b. The player moves diagonally and only one of the two directions is blocked.
+  1. The wizard slides along the blocked edge in the open direction.
+- 3c. The arena's edge lies less than one step away in the direction of travel.
+  1. The wizard stops at the edge, as in 3a.
+
+MVP scope (November 2026): water is the only blocked terrain. Mobs and fireballs are not
+part of this use case: mobs keep off water through Generate Mob Waves, and fireballs cross it.
 
 ### Use Case 2
 Name: Generate Mob Waves
@@ -222,7 +238,8 @@ renderer are connected to startup and the game panel. Startup failures show an e
 without opening a playable game; later map errors appear above the last complete background.
 Automated tests cover the startup builder, panel drawing and existing movement controls.
 Final verification is complete; the live display and keyboard checks were confirmed by Seran.
-Enemy spawning, player collision and camera behaviour are outside this map MVP.
+Enemy spawning, player collision and camera behaviour are outside this map MVP (player
+collision with water is now part of Use Case 1).
 
 
 ### Use Case 6
@@ -417,7 +434,7 @@ Requires JDK 11+ (17 recommended).
 Move the wizard with WASD or the arrow keys over the green dirt and blue water map.
 Your first move starts wave 1: three slimes appear near the edges and chase you, stopping
 when they reach you. They walk around water and around each other instead of stacking.
-Player-water collision is deferred, so the player can cross water.
+Water also blocks the wizard, who slides along its edge when moving diagonally.
 Left-click to cast a fireball toward the pointer. Fireballs cross water; a fireball that hits
 a slime defeats it in one hit (demo), and the slime plays its death animation and disappears.
 When a whole wave is gone, the next one appears with one more slime (3, 4, 5, ... up to 10),
@@ -436,7 +453,17 @@ at random spots around the edges of the map. Press F3 to show or hide the slimes
 ### Architecture (core loop)
 
 - `entity/Player`: position, size, speed, facing direction and whether it is moving (no Swing).
-- `use_case/update_game`: one tick of game rules (`UpdateGameInteractor`) with input/output boundaries.
+  `move(dx, dy, terrain)` steps along x and then y, each limited by the terrain, so the player
+  slides along blocked edges.
+- `entity/TileMap.limitHorizontalMove` / `limitVerticalMove`: how far a hitbox may travel along
+  one axis before it would overlap non-walkable terrain or leave the map (it stops flush,
+  touching but not overlapping). Tiles the hitbox already overlaps are not checked, so a mover
+  placed on blocked ground can walk off it.
+- `use_case/update_game`: one tick of game rules (`UpdateGameInteractor`) with input/output
+  boundaries. It reads the arena each tick through `UpdateGameDataAccessInterface`
+  (`getCurrentMap`), moves the player over it, then keeps the player inside the world.
+- `data_access/InMemoryUpdateGameDataAccessObject` implements that interface by holding one
+  `TileMap`. `Main` gives it the same cached map that is drawn and that the enemies use.
 - `interface_adapter/game`: `GameController` (key state -> request), `GamePresenter` + `GameViewModel` (result -> what to draw, including which `PlayerAnimation` to play and for how many ticks).
 - `view`: `GameWindow` (JFrame), `GamePanel` (draws), `KeyboardInput` (records held keys), `PlayerSprite` + `SpriteAnimation` (draw the wizard's idle/walk animations from `src/main/resources/sprites/wizard`, flipped when facing left).
 - `app`: `GameLoop` (60 ticks/s thread: input -> player update -> mob-wave update -> queued casts and projectile update -> repaint) and `Main` (builds and wires everything).
@@ -459,7 +486,7 @@ The map MVP is implemented and verified, including startup and game-panel integr
 - `view/MapLayer`: reads `MapViewModel`, draws the cached background at the top-left, and wraps error text into a banner. `GamePanel` receives the map, enemy-wave and projectile layers plus the player sprite. It draws terrain, enemies, the wizard, projectiles and then any map error. It subscribes to map changes while displayed and removes its listener when detached.
 - `view/GameWindow.showStartupError`: displays a failure dialog before a playable window is opened.
 - `app/MapBuilder`: owns the one terrain-registry definition (`standardTileTypes()`) and wires a map source (by default the file reader), use case, presenter and renderer; requests the starting map through `MapController`; and returns a prepared `MapLayer`. A map or image failure reports one error and returns no layer.
-- `app/Main`: supplies `level1.txt`, tile size 32, the image mappings and one shared caching map source to `MapBuilder`, then reuses that already loaded map for the enemies' walkability checks. It opens the window and starts the existing loop only after map preparation succeeds.
+- `app/Main`: supplies `level1.txt`, tile size 32, the image mappings and one shared caching map source to `MapBuilder`, then reuses that already loaded map for player movement and the enemies' walkability checks. It opens the window and starts the existing loop only after map preparation succeeds.
 
 The map flow is separate from per-tick player updates. Interactor tests use in-memory data
 access; an integration test connects the real file reader, controller, interactor, presenter
@@ -501,9 +528,9 @@ same state reuses the cached image; error-only changes also reuse it. The helper
 about player movement, enemy behaviour, fireballs or a camera.
 
 To edit the map, change the numbers in `level1.txt` and rebuild resources before the next run
-(for example, with `mvn compile`). Player collision and detailed tile artwork are deferred.
-The terrain data marks water as non-walkable; the enemies use it (through `TileMap.isWalkable`)
-to stay on dirt. Fireballs should cross water.
+(for example, with `mvn compile`). Detailed tile artwork is deferred.
+The terrain data marks water as non-walkable: it blocks the player (see Use Case 1), and the
+enemies use it (through `TileMap.isWalkable`) to stay on dirt. Fireballs should cross water.
 
 #### Map verification
 
