@@ -205,6 +205,30 @@ For a new feature:
 
 ## 8. Code style
 
+Follow the course notes on
+[code style and documentation](https://github.com/CSC207-UofT/207-course-notes/blob/main/code-style-and-documentation.md#code-style-and-checkstyle):
+the Google Java Style Guide, checked by CheckStyle.
+
+- Run `mvn checkstyle:check` (not with `-q`, which hides the warnings). It uses the course's
+  `checkstyle/google_checks.xml`. New and changed code must add **zero** warnings ("clean as
+  you code"). The build doesn't fail on warnings, so check the output yourself.
+- Only two rules are suppressed (`checkstyle/checkstyle-suppressions.xml`): `PackageName`,
+  for our `use_case` / `interface_adapter` / `data_access` packages, and `Indentation`,
+  because this repo uses **4-space** indentation. Don't run google-java-format or Spotless,
+  because they reformat to 2 spaces.
+- Rules that come up most often:
+  - Imports go in one alphabetical block with no blank lines between groups.
+  - Lines are at most 100 characters.
+  - Every `if` and loop gets braces.
+  - Bare numbers become named `static final` constants.
+  - Names are `UpperCamelCase` for classes, `lowerCamelCase` for methods and variables, and
+    `UPPER_SNAKE_CASE` for constants. Avoid runs of capitals, even in test names
+    (`startsWithNoMap`, not `startsWithoutAMap`).
+- Javadoc goes on every public type, constructor and method. Start with a one-sentence
+  summary. Add `@param` for each parameter, `@return` for non-void methods (including when
+  it can be `null`), and `@throws` for each exception and when it happens. Describe the
+  contract: what callers can expect, preconditions and edge cases. Don't restate the
+  signature.
 - Keep the existing layout: `app`, `entity`, `use_case/<name>`, `interface_adapter/<feature>`,
   `view`, plus `data_access` when persistence arrives.
 - Short Javadoc on each class saying its single job (as the existing classes do). Javadoc on
@@ -217,9 +241,10 @@ For a new feature:
 1. Run the §1 self-check greps. Every command must print nothing.
 2. Go through §4 (SOLID) and §7 (red flags) for each class you touched.
 3. `mvn -q test` passes, with tests for the success path and each extension.
-4. README use case and "Architecture" section match the code.
-5. Commit messages follow §10.
-6. In your reply, name any rule you bent and why. Silence means none were bent.
+4. `mvn checkstyle:check` reports no warnings in any file you touched (§8).
+5. README use case and "Architecture" section match the code.
+6. Commit messages follow §10.
+7. In your reply, name any rule you bent and why. Silence means none were bent.
 
 ## 10. Commits
 

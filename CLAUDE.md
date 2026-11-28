@@ -19,6 +19,10 @@ Decide which layer each new class belongs in (§1, §3) before creating it.
 1. Run the Dependency Rule self-check greps in §1. Every command must print nothing.
 2. Check every file you touched against the SOLID checklist (§4) and the red flags (§7).
 3. Run `mvn -q test`.
+4. Run `mvn checkstyle:check` (without `-q`) and fix every warning in the files you touched.
+   Style and Javadoc follow the course notes on
+   [code style and documentation](https://github.com/CSC207-UofT/207-course-notes/blob/main/code-style-and-documentation.md#code-style-and-checkstyle)
+   (AGENTS.md §8).
 
 In your reply, name any rule you had to bend and explain why. If a request can only be met by
 breaking a rule, say so before writing the code and propose a design that keeps it.
